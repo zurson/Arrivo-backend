@@ -20,14 +20,9 @@ class EmployeeService(private val repository: EmployeeRepository) {
 
     fun updateStatus(employeeId: Long, status: EmployeeStatus): Employee {
         val employee = findById(employeeId)
-        checkStatus(employee.status)
 
         employee.status = status
         return repository.save(employee)
     }
 
-    private fun checkStatus(status: EmployeeStatus) {
-        if (status !in EmployeeStatus.entries.toTypedArray())
-            throw InvalidStatusException("Invalid status: $status. Allowed values are: ${EmployeeStatus.entries.joinToString()}")
-    }
 }
