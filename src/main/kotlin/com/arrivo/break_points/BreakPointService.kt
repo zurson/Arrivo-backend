@@ -1,6 +1,6 @@
 package com.arrivo.break_points
 
-import com.arrivo.utilities.IdNotFoundException
+import com.arrivo.exceptions.IdNotFoundException
 import org.springframework.stereotype.Service
 
 @Service

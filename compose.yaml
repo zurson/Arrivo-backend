@@ -1,8 +1,8 @@
-name: Arrivo
+name: arrivo
 
 services:
   database:
-    container_name: database
+    container_name: arrivo_database
     env_file: .env
     image: postgres:latest
     ports:

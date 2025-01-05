@@ -1,4 +1,4 @@
-package com.arrivo.security
+package com.arrivo.firebase
 
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp

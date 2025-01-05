@@ -1,28 +1,88 @@
 package com.arrivo.employee
 
-import com.arrivo.utilities.IdNotFoundException
-import com.arrivo.utilities.InvalidStatusException
+import com.arrivo.exceptions.IdNotFoundException
+import com.arrivo.firebase.FirebaseRepository
+import com.google.firebase.auth.FirebaseAuth
 import org.springframework.stereotype.Service
 
 @Service
-class EmployeeService(private val repository: EmployeeRepository) {
-    fun findAll(): List<Employee> = repository.findAll()
+class EmployeeService(
+    private val employeeRepo: EmployeeRepository,
+    private val firebaseRepo: FirebaseRepository
+) {
+    fun findAll(): List<EmployeeDTO> {
+        return employeeRepo.findAll().map { emp ->
+            toDTO(emp)
+        }
+    }
 
-    fun save(employee: Employee) {
-        repository.save(employee)
+
+    fun createAccount(request: EmployeeRequest): EmployeeDTO {
+        val firebaseUid = firebaseRepo.createFirebaseUser(request.email)
+
+        try {
+            val emp = Employee(
+                firebaseUid = firebaseUid,
+                firstName = request.firstName,
+                lastName = request.lastName,
+                email = request.email,
+                phoneNumber = request.phoneNumber,
+            )
+
+            return toDTO(employeeRepo.save(emp))
+        } catch (e: Exception) {
+            FirebaseAuth.getInstance().deleteUser(firebaseUid)
+            throw e
+        }
+    }
+
+
+    fun findEmployeeById(id: Long): EmployeeDTO {
+        return toDTO(findById(id))
     }
 
     fun findById(id: Long): Employee {
-        return repository.findById(id).orElseThrow {
+        return employeeRepo.findById(id).orElseThrow {
             IdNotFoundException("Employee with ID $id not found")
         }
     }
 
-    fun updateStatus(employeeId: Long, status: EmployeeStatus): Employee {
+    private fun toDTO(emp: Employee): EmployeeDTO {
+        return EmployeeDTO(
+            id = emp.id,
+            email = emp.email,
+            firstName = emp.firstName,
+            lastName = emp.lastName,
+            phoneNumber = emp.phoneNumber,
+            status = emp.status,
+        )
+    }
+
+
+    fun update(employeeId: Long, request: EmployeeRequest): EmployeeDTO {
         val employee = findById(employeeId)
 
-        employee.status = status
-        return repository.save(employee)
+        val prevEmail = firebaseRepo.changeUserEmail(
+            email = request.email,
+            uid = employee.firebaseUid
+        )
+
+        employee.firstName = request.firstName
+        employee.lastName = request.lastName
+        employee.email = request.email
+        employee.phoneNumber = request.phoneNumber
+        employee.status = request.status
+
+        try {
+            return toDTO(employeeRepo.save(employee))
+        } catch (e: Exception) {
+            firebaseRepo.changeUserEmail(
+                email = prevEmail,
+                uid = employee.firebaseUid
+            )
+            throw e
+        }
+
     }
 
 }
