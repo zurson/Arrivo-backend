@@ -1,5 +1,6 @@
 package com.arrivo.employee;
 
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -10,20 +11,22 @@ class EmployeeController(private val service: EmployeeService) {
     fun getAll() = ResponseEntity.ok(service.findAll())
 
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: Long): ResponseEntity<Employee> {
-        return ResponseEntity.ok(service.findById(id))
+    fun getById(@PathVariable id: Long): ResponseEntity<EmployeeDTO> {
+        return ResponseEntity.ok(service.findEmployeeById(id))
     }
 
     @PostMapping
-    fun create(@RequestBody employee: Employee) = ResponseEntity.ok(service.save(employee))
+    fun createAccount(@RequestBody @Valid request: EmployeeRequest): ResponseEntity<EmployeeDTO> {
+        return ResponseEntity.ok(service.createAccount(request))
+    }
 
-    @PatchMapping("/{id}/status")
-    fun updateStatus(
+
+    @PatchMapping("/{id}")
+    fun update(
         @PathVariable id: Long,
-        @RequestParam status: EmployeeStatus
-    ): ResponseEntity<Employee> {
-        val updatedEmployee = service.updateStatus(id, status)
-        return ResponseEntity.ok(updatedEmployee)
+        @RequestBody @Valid request: EmployeeRequest
+    ) {
+        service.update(id, request)
     }
 }
 

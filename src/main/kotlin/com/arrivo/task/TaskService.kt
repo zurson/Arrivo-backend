@@ -1,7 +1,7 @@
 package com.arrivo.task
 
 import com.arrivo.employee.EmployeeService
-import com.arrivo.utilities.IdNotFoundException
+import com.arrivo.exceptions.IdNotFoundException
 import org.springframework.stereotype.Service
 
 @Service

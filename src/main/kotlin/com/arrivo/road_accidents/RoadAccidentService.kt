@@ -2,7 +2,7 @@ package com.arrivo.road_accidents
 
 import com.arrivo.employee.Employee
 import com.arrivo.employee.EmployeeService
-import com.arrivo.utilities.IdNotFoundException
+import com.arrivo.exceptions.IdNotFoundException
 import org.springframework.stereotype.Service
 
 @Service
