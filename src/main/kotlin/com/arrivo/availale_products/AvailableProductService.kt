@@ -6,7 +6,9 @@ import org.springframework.stereotype.Service
 class AvailableProductService(
     private val availableProductRepository: AvailableProductRepository
 ) {
-    fun getAllAvailableProducts(): List<AvailableProduct> = availableProductRepository.findAll()
+    fun getAllAvailableProducts(): List<AvailableProductDTO> {
+        return availableProductRepository.findAll().map { AvailableProductDTO(it.name) }
+    }
 
     fun findById(id: Long): AvailableProduct =
         availableProductRepository.findById(id).orElseThrow {
