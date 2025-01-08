@@ -25,7 +25,7 @@ data class Task(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var status: TaskStatus = TaskStatus.UNASSIGNED,
+    var status: TaskStatus,
 
     @ManyToOne
     var employee: Employee?,
