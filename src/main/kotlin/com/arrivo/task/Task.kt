@@ -1,35 +1,36 @@
 package com.arrivo.task
 
 import com.arrivo.employee.Employee
+import com.arrivo.task.products.Product
 import com.arrivo.utilities.Location
 import jakarta.persistence.*
+import java.io.Serializable
+
 
 @Entity
 data class Task(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long = 0,
+    val id: Long? = null,
+
+    @Column(unique = true, nullable = false)
+    var title: String,
 
     @Embedded
-    @AttributeOverrides(
-        AttributeOverride(name = "latitude", column = Column(name = "start_latitude")),
-        AttributeOverride(name = "longitude", column = Column(name = "start_longitude"))
-    )
-    var startLocation: Location,
+    @Column(nullable = false)
+    var location: Location,
 
-    @Embedded
-    @AttributeOverrides(
-        AttributeOverride(name = "latitude", column = Column(name = "end_latitude")),
-        AttributeOverride(name = "longitude", column = Column(name = "end_longitude"))
-    )
-    var endLocation: Location,
-
-    var distanceKm: Double,
-    var cargoWeight: Double,
+    @Column(nullable = false)
+    var addressText: String,
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     var status: TaskStatus = TaskStatus.UNASSIGNED,
 
     @ManyToOne
-    var employee: Employee?
-)
+    var employee: Employee?,
+
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JoinColumn(name = "task_id")
+    val products: MutableList<Product> = mutableListOf()
+) : Serializable
