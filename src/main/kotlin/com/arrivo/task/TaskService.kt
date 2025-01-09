@@ -27,6 +27,7 @@ class TaskService(
             location = request.location,
             addressText = request.addressText,
             status = TaskStatus.UNASSIGNED,
+            assignedDate = null,
             employee = null,
             products = mutableListOf()
         )
@@ -48,6 +49,7 @@ class TaskService(
         task.location = request.location
         task.addressText = request.addressText
         task.status = request.status
+        task.assignedDate = request.assignedDate
         task.employee = employee
 
         task.products.clear()

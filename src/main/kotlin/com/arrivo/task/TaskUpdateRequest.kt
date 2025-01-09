@@ -4,6 +4,7 @@ import com.arrivo.task.products.ProductRequest
 import com.arrivo.utilities.Location
 import jakarta.validation.Valid
 import jakarta.validation.constraints.*
+import java.time.LocalDateTime
 
 data class TaskUpdateRequest(
 
@@ -20,6 +21,9 @@ data class TaskUpdateRequest(
 
     @field:NotNull(message = "Status cannot be null")
     val status: TaskStatus,
+
+    @field:FutureOrPresent(message = "Assigned date cannot be in the past")
+    val assignedDate: LocalDateTime,
 
     @field:NotNull(message = "Employee ID cannot be null")
     @field:Positive(message = "Employee ID must be a positive number")
