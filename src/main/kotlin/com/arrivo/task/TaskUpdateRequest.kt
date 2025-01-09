@@ -23,11 +23,10 @@ data class TaskUpdateRequest(
     val status: TaskStatus,
 
     @field:FutureOrPresent(message = "Assigned date cannot be in the past")
-    val assignedDate: LocalDateTime,
+    val assignedDate: LocalDateTime?,
 
-    @field:NotNull(message = "Employee ID cannot be null")
     @field:Positive(message = "Employee ID must be a positive number")
-    val employeeId: Long,
+    val employeeId: Long?,
 
     @field:NotEmpty(message = "Products list cannot be empty")
     @field:Valid

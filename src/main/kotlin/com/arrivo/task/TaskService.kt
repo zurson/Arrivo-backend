@@ -4,12 +4,17 @@ import com.arrivo.employee.EmployeeService
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.task.products.Product
 import com.arrivo.task.products.ProductRequest
+import com.arrivo.task.products.ProductService
+import jakarta.transaction.Transactional
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
 import org.springframework.stereotype.Service
 
 @Service
 class TaskService(
     private val repository: TaskRepository,
     private val employeeService: EmployeeService,
+    private val productService: ProductService,
+    private val entityManagerFactory2: LocalContainerEntityManagerFactoryBean,
 ) {
     fun findAll(): List<Task> = repository.findAll()
 
@@ -41,16 +46,18 @@ class TaskService(
     }
 
 
+    @Transactional
     fun update(id: Long, request: TaskUpdateRequest): Task {
         val task = findById(id)
-        val employee = employeeService.findById(request.employeeId)
 
-        task.title = request.title
-        task.location = request.location
-        task.addressText = request.addressText
-        task.status = request.status
-        task.assignedDate = request.assignedDate
-        task.employee = employee
+        task.apply {
+            title = request.title
+            location = request.location
+            addressText = request.addressText
+            status = request.status
+            assignedDate = if (!isTaskUnassigned(request)) request.assignedDate else null
+            employee = if (!isTaskUnassigned(request) && request.employeeId != null) employeeService.findById(request.employeeId) else null
+        }
 
         task.products.clear()
         addProductsToTask(
@@ -76,5 +83,10 @@ class TaskService(
                 )
             )
         }
+    }
+
+
+    private fun isTaskUnassigned(request: TaskUpdateRequest): Boolean {
+        return request.status == TaskStatus.UNASSIGNED
     }
 }

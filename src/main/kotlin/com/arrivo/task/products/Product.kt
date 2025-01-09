@@ -10,7 +10,7 @@ import java.io.Serializable
 data class Product(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    val id: Long = 0,
 
     var name: String,
 
