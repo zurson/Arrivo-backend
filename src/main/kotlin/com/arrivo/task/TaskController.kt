@@ -1,5 +1,6 @@
 package com.arrivo.task
 
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -13,12 +14,15 @@ class TaskController(private val service: TaskService) {
     fun getById(@PathVariable id: Long) = service.findById(id)
 
     @PostMapping
-    fun create(@RequestBody taskRequest: TaskCreationRequest): ResponseEntity<Task> {
+    fun create(@Valid @RequestBody taskRequest: TaskCreateRequest): ResponseEntity<Task> {
         return ResponseEntity.ok(service.create(taskRequest))
     }
 
-    @PutMapping("/{id}")
-    fun updateTask(@PathVariable id: Long, @RequestBody request: TaskUpdateRequest): ResponseEntity<Task> {
+    @PatchMapping("/{id}")
+    fun updateTask(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: TaskUpdateRequest
+    ): ResponseEntity<Task> {
         return ResponseEntity.ok(service.update(id, request))
     }
 

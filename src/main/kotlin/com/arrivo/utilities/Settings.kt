@@ -10,7 +10,8 @@ class Settings {
         const val ERROR_PHONE_NUMBER_EXISTS_MESSAGE = "Phone number already exists"
         const val ERROR_EMAIL_ALREADY_IN_USE_MESSAGE = "Email already in use"
         const val ERROR_NO_EMAIL_ASSOCIATED = "User does not have an email associated"
-
+        const val ERROR_TASK_TITLE_ALREADY_EXISTS_MESSAGE = "Title already exists"
+        const val ERROR_INVALID_REQUEST_FORMAT_MESSAGE = "Invalid request format"
     }
 
 }
