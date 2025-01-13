@@ -26,6 +26,6 @@ class TaskController(private val service: TaskService) {
         return ResponseEntity.ok(service.update(id, request))
     }
 
-    @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Long) = ResponseEntity.ok(service.deleteById(id))
+//    @DeleteMapping("/{id}")
+//    fun delete(@PathVariable id: Long) = ResponseEntity.ok(service.deleteById(id))
 }
