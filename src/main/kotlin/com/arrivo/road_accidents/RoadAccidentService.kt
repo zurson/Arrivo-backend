@@ -4,6 +4,9 @@ import com.arrivo.employee.Employee
 import com.arrivo.employee.EmployeeService
 import com.arrivo.exceptions.IdNotFoundException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Service
 class RoadAccidentService(
@@ -11,19 +14,31 @@ class RoadAccidentService(
     private val employeeService: EmployeeService
 ) {
 
-    fun findAll(): List<RoadAccident> = repository.findAll()
+    companion object {
+        private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    }
 
-    fun findById(id: Long): RoadAccident {
+    fun findAll(): List<RoadAccidentDTO> = repository.findAll().map { roadAccident -> toDto(roadAccident) }
+
+
+    fun findAccidentById(id: Long): RoadAccidentDTO {
+        return toDto(findById(id))
+    }
+
+
+    private fun findById(id: Long): RoadAccident {
         return repository.findById(id).orElseThrow {
             IdNotFoundException("Road Accident with ID $id not found")
         }
     }
 
-    fun create(request: RoadAccidentRequest): RoadAccident {
+
+    @Transactional
+    fun create(request: RoadAccidentCreateRequest): RoadAccidentDTO {
         val employee = findEmployeeById(request.employeeId)
 
         val roadAccident = RoadAccident(
-            status = request.status,
+            status = RoadAccidentStatus.ACTIVE,
             location = request.location,
             category = request.category,
             licensePlate = request.licensePlate,
@@ -32,25 +47,39 @@ class RoadAccidentService(
             employee = employee,
         )
 
-        return repository.save(roadAccident)
+        return toDto(repository.save(roadAccident))
     }
 
-    fun update(id: Long, updatedRoadAccident: RoadAccidentRequest): RoadAccident {
-        val existingEvent = findById(id)
-        val employee = findEmployeeById(updatedRoadAccident.employeeId)
 
-        val eventToSave = existingEvent.copy(
-            status = updatedRoadAccident.status,
-            location = updatedRoadAccident.location,
-            category = updatedRoadAccident.category,
-            licensePlate = updatedRoadAccident.licensePlate,
-            date = updatedRoadAccident.date,
-            description = updatedRoadAccident.description,
-            employee = employee
-        )
+    @Transactional
+    fun update(id: Long, request: RoadAccidentUpdateRequest): RoadAccidentDTO {
+        val roadAccident = findById(id)
+        val foundEmployee = findEmployeeById(request.employeeId)
 
-        return repository.save(eventToSave)
+        roadAccident.apply {
+            status = request.status
+            location = request.location
+            category = request.category
+            licensePlate = request.licensePlate
+            date = request.date
+            description = request.description
+            employee = foundEmployee
+        }
+
+        return toDto(repository.save(roadAccident))
     }
+
+
+    fun markAsResolved(id: Long): RoadAccidentDTO {
+        val accident = findById(id)
+
+        accident.apply {
+            status = RoadAccidentStatus.ENDED
+        }
+
+        return toDto(repository.save(accident))
+    }
+
 
     fun deleteById(id: Long) {
         findById(id).let {
@@ -58,7 +87,25 @@ class RoadAccidentService(
         }
     }
 
+
     private fun findEmployeeById(id: Long): Employee {
         return employeeService.findById(id)
     }
+
+
+    private fun toDto(roadAccident: RoadAccident): RoadAccidentDTO {
+        return RoadAccidentDTO(
+            id = roadAccident.id,
+            status = roadAccident.status,
+            location = roadAccident.location,
+            category = roadAccident.category,
+            licensePlate = roadAccident.licensePlate,
+            date = roadAccident.date,
+            description = roadAccident.description,
+            employee = roadAccident.employee,
+        )
+    }
+
+
+    private fun formatDate(dateString: String): LocalDate = LocalDate.parse(dateString, DATE_FORMATTER)
 }

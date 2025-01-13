@@ -11,18 +11,18 @@ data class RoadAccident(
     val id: Long = 0,
 
     @Enumerated(EnumType.STRING)
-    val status: RoadAccidentStatus = RoadAccidentStatus.NOT_COMPLETED,
+    var status: RoadAccidentStatus = RoadAccidentStatus.ACTIVE,
 
     @Embedded
-    val location: Location,
+    var location: Location,
 
     @Enumerated(EnumType.STRING)
-    val category: RoadAccidentCategory = RoadAccidentCategory.OTHER,
+    var category: RoadAccidentCategory = RoadAccidentCategory.OTHER,
 
-    val licensePlate: String,
-    val date: LocalDate,
-    val description: String,
+    var licensePlate: String,
+    var date: LocalDate,
+    var description: String,
 
     @ManyToOne
-    val employee: Employee
+    var employee: Employee
 )
