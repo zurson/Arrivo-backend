@@ -11,10 +11,10 @@ class TaskController(private val service: TaskService) {
     fun getAll() = ResponseEntity.ok(service.findAll())
 
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: Long) = service.findById(id)
+    fun getById(@PathVariable id: Long) = service.findTaskById(id)
 
     @PostMapping
-    fun create(@Valid @RequestBody taskRequest: TaskCreateRequest): ResponseEntity<Task> {
+    fun create(@Valid @RequestBody taskRequest: TaskCreateRequest): ResponseEntity<TaskDTO> {
         return ResponseEntity.ok(service.create(taskRequest))
     }
 
@@ -22,8 +22,13 @@ class TaskController(private val service: TaskService) {
     fun updateTask(
         @PathVariable id: Long,
         @Valid @RequestBody request: TaskUpdateRequest
-    ): ResponseEntity<Task> {
+    ): ResponseEntity<TaskDTO> {
         return ResponseEntity.ok(service.update(id, request))
+    }
+
+    @GetMapping("/free-tasks")
+    fun getFreeTasks(): ResponseEntity<List<TaskDTO>> {
+        return ResponseEntity.ok(service.getFreeTasks())
     }
 
 //    @DeleteMapping("/{id}")

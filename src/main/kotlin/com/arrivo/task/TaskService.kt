@@ -4,29 +4,28 @@ import com.arrivo.employee.EmployeeService
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.task.products.Product
 import com.arrivo.task.products.ProductRequest
-import com.arrivo.task.products.ProductService
 import jakarta.transaction.Transactional
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
 import org.springframework.stereotype.Service
 
 @Service
 class TaskService(
     private val repository: TaskRepository,
-    private val employeeService: EmployeeService,
-    private val productService: ProductService,
-    private val entityManagerFactory2: LocalContainerEntityManagerFactoryBean,
+    private val employeeService: EmployeeService
 ) {
-    fun findAll(): List<Task> = repository.findAll()
+    fun findAll(): List<TaskDTO> = repository.findAll().map { task -> toDto(task) }
 
 
-    fun findById(id: Long): Task {
+    private fun findById(id: Long): Task {
         return repository.findById(id).orElseThrow {
             IdNotFoundException("Task with ID $id not found")
         }
     }
 
 
-    fun create(request: TaskCreateRequest): Task {
+    fun findTaskById(id: Long): TaskDTO = toDto(findById(id))
+
+
+    fun create(request: TaskCreateRequest): TaskDTO {
         val task = Task(
             title = request.title,
             location = request.location,
@@ -42,12 +41,12 @@ class TaskService(
             task = task,
         )
 
-        return repository.save(task)
+        return toDto(repository.save(task))
     }
 
 
     @Transactional
-    fun update(id: Long, request: TaskUpdateRequest): Task {
+    fun update(id: Long, request: TaskUpdateRequest): TaskDTO {
         val task = findById(id)
 
         task.apply {
@@ -56,7 +55,8 @@ class TaskService(
             addressText = request.addressText
             status = request.status
             assignedDate = if (!isTaskUnassigned(request)) request.assignedDate else null
-            employee = if (!isTaskUnassigned(request) && request.employeeId != null) employeeService.findById(request.employeeId) else null
+            employee =
+                if (!isTaskUnassigned(request) && request.employeeId != null) employeeService.findById(request.employeeId) else null
         }
 
         task.products.clear()
@@ -65,7 +65,7 @@ class TaskService(
             task = task,
         )
 
-        return repository.save(task)
+        return toDto(repository.save(task))
     }
 
 
@@ -88,5 +88,24 @@ class TaskService(
 
     private fun isTaskUnassigned(request: TaskUpdateRequest): Boolean {
         return request.status == TaskStatus.UNASSIGNED
+    }
+
+
+    fun getFreeTasks(): List<TaskDTO> {
+        return repository.findAllByStatus(TaskStatus.UNASSIGNED).map { toDto(it) }
+    }
+
+
+    private fun toDto(task: Task): TaskDTO {
+        return TaskDTO(
+            id = task.id,
+            title = task.title,
+            location = task.location,
+            addressText = task.addressText,
+            status = task.status,
+            assignedDate = task.assignedDate,
+            employee = task.employee,
+            products = task.products
+        )
     }
 }
