@@ -13,13 +13,13 @@ class OpenAPIConfiguration {
 
     @Bean
     fun defineOpenApi(): OpenAPI {
-        val server: Server = Server()
-        server.setUrl("http://localhost:8080")
-        server.setDescription("Development")
+        val server = Server()
+        server.url = "http://localhost:8080"
+        server.description = "Development"
 
-        val myContact: Contact = Contact()
-        myContact.setName("Jane Doe")
-        myContact.setEmail("your.email@gmail.com")
+        val myContact = Contact()
+        myContact.name = "Jane Doe"
+        myContact.email = "your.email@gmail.com"
 
         val information: Info = Info()
             .title("Testing API")

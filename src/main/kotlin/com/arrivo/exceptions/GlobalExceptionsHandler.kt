@@ -2,6 +2,7 @@ package com.arrivo.exceptions
 
 import com.arrivo.utilities.Settings.Companion.ERROR_EMAIL_ALREADY_IN_USE_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_ID_NOT_FOUND_MESSAGE
+import com.arrivo.utilities.Settings.Companion.ERROR_DATA_CONFLICT_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_INVALID_REQUEST_FORMAT_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_INVALID_VALUE_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_PHONE_NUMBER_EXISTS_MESSAGE
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 @ControllerAdvice
 class GlobalExceptionHandler {
 
+
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationExceptions(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponseDTO> {
         val errors: List<String> = ex.bindingResult.fieldErrors.map { error ->
@@ -33,6 +35,7 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }
 
+
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleInvalidJsonException(ex: HttpMessageNotReadableException): ResponseEntity<ErrorResponseDTO> {
         val errors: List<String> = listOf(ERROR_INVALID_REQUEST_FORMAT_MESSAGE)
@@ -42,8 +45,11 @@ class GlobalExceptionHandler {
             errors = errors
         )
 
+        ex.printStackTrace()
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }
+
 
     @ExceptionHandler(IdNotFoundException::class)
     fun handleEmployeeNotFound(ex: IdNotFoundException): ResponseEntity<ErrorResponseDTO> {
@@ -54,6 +60,18 @@ class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse)
     }
+
+
+    @ExceptionHandler(DataConflictException::class)
+    fun handleEmployeeNotFound(ex: DataConflictException): ResponseEntity<ErrorResponseDTO> {
+        val errorResponse = ErrorResponseDTO(
+            code = HttpStatus.CONFLICT.value(),
+            errors = listOf(ex.message ?: ERROR_DATA_CONFLICT_MESSAGE)
+        )
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse)
+    }
+
 
     @ExceptionHandler(Exception::class)
     fun handleGenericException(ex: Exception): ResponseEntity<ErrorResponseDTO> {
@@ -67,6 +85,7 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
     }
 
+
     @ExceptionHandler(DataIntegrityViolationException::class)
     fun handleDataIntegrityViolation(ex: DataIntegrityViolationException): ResponseEntity<ErrorResponseDTO> {
         val errorMessage = extractConstraintViolationDetails(ex)
@@ -78,6 +97,7 @@ class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse)
     }
+
 
     private fun extractConstraintViolationDetails(ex: DataIntegrityViolationException): String {
         val rootCauseMessage = ex.rootCause?.message ?: "Constraint violation"
