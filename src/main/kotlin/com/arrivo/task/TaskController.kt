@@ -10,9 +10,6 @@ class TaskController(private val service: TaskService) {
     @GetMapping
     fun getAll() = ResponseEntity.ok(service.findAll())
 
-    @GetMapping("/{id}")
-    fun getById(@PathVariable id: Long) = service.findTaskById(id)
-
     @PostMapping
     fun create(@Valid @RequestBody taskRequest: TaskCreateRequest): ResponseEntity<TaskDTO> {
         return ResponseEntity.ok(service.create(taskRequest))

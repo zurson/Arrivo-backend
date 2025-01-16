@@ -1,11 +1,9 @@
 package com.arrivo.task
 
-import com.arrivo.employee.Employee
+import com.arrivo.delivery.Delivery
 import com.arrivo.task.products.Product
 import com.arrivo.utilities.Location
 import jakarta.persistence.*
-import java.io.Serializable
-import java.time.LocalDateTime
 
 
 @Entity
@@ -24,16 +22,12 @@ data class Task(
     @Column(nullable = false)
     var addressText: String,
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    var status: TaskStatus,
-
-    var assignedDate: LocalDateTime?,
-
-    @ManyToOne
-    var employee: Employee?,
-
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "task_id")
-    val products: MutableList<Product> = mutableListOf()
-) : Serializable
+    val products: MutableList<Product> = mutableListOf(),
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "delivery_id", nullable = true)
+    var delivery: Delivery? = null
+
+)

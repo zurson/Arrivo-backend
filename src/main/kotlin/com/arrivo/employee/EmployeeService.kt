@@ -4,11 +4,12 @@ import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.firebase.FirebaseRepository
 import com.google.firebase.auth.FirebaseAuth
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 
 @Service
 class EmployeeService(
     private val employeeRepo: EmployeeRepository,
-    private val firebaseRepo: FirebaseRepository
+    private val firebaseRepo: FirebaseRepository,
 ) {
     fun findAll(): List<EmployeeDTO> {
         return employeeRepo.findAll().map { emp ->
@@ -41,11 +42,18 @@ class EmployeeService(
         return toDTO(findById(id))
     }
 
+
     fun findById(id: Long): Employee {
         return employeeRepo.findById(id).orElseThrow {
             IdNotFoundException("Employee with ID $id not found")
         }
     }
+
+
+    fun getAllEmployeesNotAssignedOnDate(date: LocalDate): List<EmployeeDTO> {
+        return employeeRepo.findEmployeesNotAssignedOnDate(date).map { emp -> toDTO(emp) }
+    }
+
 
     private fun toDTO(emp: Employee): EmployeeDTO {
         return EmployeeDTO(

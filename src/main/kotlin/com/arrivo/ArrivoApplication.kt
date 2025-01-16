@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class ArrivoApplication
 
 fun main(args: Array<String>) {
-	runApplication<ArrivoApplication>(*args)
+    runApplication<ArrivoApplication>(*args)
 }
