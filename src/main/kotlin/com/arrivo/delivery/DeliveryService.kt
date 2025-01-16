@@ -198,6 +198,9 @@ class DeliveryService(
             tasks = delivery.tasks.map { task -> taskService.toDto(task) },
             timeMinutes = delivery.timeMinutes,
             distanceKm = delivery.distanceKm,
+            assignedDate = delivery.assignedDate,
+            status = delivery.status,
+            employee = employeeService.toDTO(delivery.employee),
         )
     }
 

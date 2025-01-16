@@ -55,7 +55,7 @@ class EmployeeService(
     }
 
 
-    private fun toDTO(emp: Employee): EmployeeDTO {
+    fun toDTO(emp: Employee): EmployeeDTO {
         return EmployeeDTO(
             id = emp.id,
             email = emp.email,
