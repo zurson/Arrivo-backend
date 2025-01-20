@@ -13,7 +13,7 @@ data class Delivery(
 
     @OneToMany
     @OrderColumn(name = "task_order")
-    val tasks: List<Task> = mutableListOf(),
+    val tasks: MutableList<Task> = mutableListOf(),
 
     @Column(nullable = false)
     var timeMinutes: Int = 0,
