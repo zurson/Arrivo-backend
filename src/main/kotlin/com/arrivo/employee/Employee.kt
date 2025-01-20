@@ -1,5 +1,6 @@
 package com.arrivo.employee
 
+import com.arrivo.security.Role
 import jakarta.persistence.*
 import jakarta.validation.constraints.Email
 
@@ -27,4 +28,8 @@ data class Employee(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var status: EmployeeStatus = EmployeeStatus.HIRED,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var role: Role = Role.USER
 )

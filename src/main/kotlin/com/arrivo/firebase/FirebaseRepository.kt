@@ -11,6 +11,11 @@ import java.util.*
 @Repository
 class FirebaseRepository {
 
+    fun findUserById(uid: String): UserRecord {
+        return FirebaseAuth.getInstance().getUser(uid) ?: throw IllegalArgumentException(ERROR_ID_NOT_FOUND_MESSAGE)
+    }
+
+
     fun createFirebaseUser(email: String): String {
         val password = generateRandomPassword(Random().nextInt(20, 40))
 
@@ -22,14 +27,35 @@ class FirebaseRepository {
         return createdUser.uid
     }
 
+
     fun changeUserEmail(uid: String, email: String): String {
-        val userRecord =
-            FirebaseAuth.getInstance().getUser(uid) ?: throw IllegalArgumentException(ERROR_ID_NOT_FOUND_MESSAGE)
+        val userRecord = findUserById(uid)
         val currentEmail = userRecord.email ?: throw IllegalStateException(ERROR_NO_EMAIL_ASSOCIATED)
         val request = UserRecord.UpdateRequest(uid).setEmail(email)
         FirebaseAuth.getInstance().updateUser(request)
 
         return currentEmail
+    }
+
+
+    fun blockUserAccount(uid: String) {
+        val userRecord = findUserById(uid)
+        val updateRequest = userRecord.updateRequest().setDisabled(true)
+
+        val auth = FirebaseAuth.getInstance()
+
+        auth.updateUser(updateRequest)
+        auth.revokeRefreshTokens(uid)
+    }
+
+
+    fun unlockUserAccount(uid: String) {
+        val userRecord = findUserById(uid)
+        val updateRequest = userRecord.updateRequest().setDisabled(false)
+
+        val auth = FirebaseAuth.getInstance()
+
+        auth.updateUser(updateRequest)
     }
 
 }

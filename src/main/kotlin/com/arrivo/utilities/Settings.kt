@@ -27,6 +27,10 @@ class Settings {
         const val TIME_EXCEED_BORDER = 480 // 8h
         const val OPTIMIZATION_TIME_DEFAULT_START = 8 // 8 AM
         const val OPTIMIZATION_AVAILABLE_TIME_HOURS = 8
+
+        // SECURITY
+        const val INVALID_TOKEN_MESSAGE = "Invalid token"
+        const val USER_NOT_FOUND_MESSAGE = "User not found"
     }
 
 }

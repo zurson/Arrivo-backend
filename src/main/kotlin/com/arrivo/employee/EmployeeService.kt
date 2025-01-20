@@ -38,11 +38,6 @@ class EmployeeService(
     }
 
 
-    fun findEmployeeById(id: Long): EmployeeDTO {
-        return toDTO(findById(id))
-    }
-
-
     fun findById(id: Long): Employee {
         return employeeRepo.findById(id).orElseThrow {
             IdNotFoundException("Employee with ID $id not found")
@@ -75,6 +70,11 @@ class EmployeeService(
             uid = employee.firebaseUid
         )
 
+        if (request.status == EmployeeStatus.FIRED)
+            firebaseRepo.blockUserAccount(employee.firebaseUid)
+        else if (employee.status == EmployeeStatus.FIRED)
+            firebaseRepo.unlockUserAccount(employee.firebaseUid)
+
         employee.firstName = request.firstName
         employee.lastName = request.lastName
         employee.email = request.email
@@ -88,6 +88,7 @@ class EmployeeService(
                 email = prevEmail,
                 uid = employee.firebaseUid
             )
+            firebaseRepo.unlockUserAccount(employee.firebaseUid)
             throw e
         }
 
