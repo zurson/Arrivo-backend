@@ -3,7 +3,9 @@ package com.arrivo.employee
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.firebase.FirebaseRepository
 import com.arrivo.security.Role
+import com.arrivo.utilities.Settings.Companion.USER_NOT_FOUND_MESSAGE
 import com.google.firebase.auth.FirebaseAuth
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -94,5 +96,17 @@ class EmployeeService(
         }
 
     }
+
+
+    fun getUserRole(): Role {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val firebaseUid = authentication.principal as String
+
+        val employee = employeeRepo.findByFirebaseUid(firebaseUid)
+            ?: throw Exception(USER_NOT_FOUND_MESSAGE)
+
+        return employee.role
+    }
+
 
 }

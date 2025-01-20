@@ -1,5 +1,6 @@
 package com.arrivo.employee;
 
+import com.arrivo.security.Role
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -13,6 +14,12 @@ class EmployeeController(private val service: EmployeeService) {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     fun getAll() = ResponseEntity.ok(service.findAll())
+
+
+    @GetMapping("/role")
+    fun getUserRole(): ResponseEntity<Role> {
+        return ResponseEntity.ok(service.getUserRole())
+    }
 
 
     @PreAuthorize("hasRole('ADMIN')")
