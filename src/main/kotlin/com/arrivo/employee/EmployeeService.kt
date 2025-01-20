@@ -2,6 +2,7 @@ package com.arrivo.employee
 
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.firebase.FirebaseRepository
+import com.arrivo.security.Role
 import com.google.firebase.auth.FirebaseAuth
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -12,9 +13,9 @@ class EmployeeService(
     private val firebaseRepo: FirebaseRepository,
 ) {
     fun findAll(): List<EmployeeDTO> {
-        return employeeRepo.findAll().map { emp ->
-            toDTO(emp)
-        }
+        return employeeRepo.findAll()
+            .filter { emp -> emp.role != Role.ADMIN }
+            .map { emp -> toDTO(emp) }
     }
 
 
