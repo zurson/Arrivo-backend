@@ -1,17 +1,22 @@
 package com.arrivo.delivery
 
+import com.arrivo.employee.Employee
 import com.arrivo.employee.EmployeeService
 import com.arrivo.exceptions.DataConflictException
+import com.arrivo.exceptions.DeliveryNotEditableException
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.task.Task
 import com.arrivo.task.TaskRepository
 import com.arrivo.task.TaskService
+import com.arrivo.utilities.Settings.Companion.DELIVERY_ALREADY_COMPLETED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_AVAILABLE_TIME_HOURS
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_TASK_LABEL_PREFIX
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_TIME_DEFAULT_START
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_VEHICLE_LABEL
 import com.arrivo.utilities.Settings.Companion.TIME_EXCEED_BORDER
+import com.arrivo.utilities.Settings.Companion.UNABLE_TO_EDIT_DELIVERY_EMPLOYEE_MESSAGE
+import com.arrivo.utilities.Settings.Companion.UNABLE_TO_EDIT_DELIVERY_TASKS_MESSAGE
 import com.google.maps.routeoptimization.v1.*
 import com.google.maps.routeoptimization.v1.Shipment.VisitRequest
 import com.google.protobuf.Timestamp
@@ -45,13 +50,115 @@ class DeliveryService(
     fun findAll(): List<DeliveryDTO> = deliveryRepository.findAll().map { delivery -> toDto(delivery) }
 
 
+    private fun validateNotCompleted(delivery: Delivery) {
+        if (delivery.status == DeliveryStatus.COMPLETED)
+            throw DeliveryNotEditableException(DELIVERY_ALREADY_COMPLETED_MESSAGE)
+    }
+
+
+    private fun clearDeliveryTasks(delivery: Delivery): Delivery {
+        delivery.tasks.forEach { task ->
+            task.delivery = null
+            taskRepository.save(task)
+        }
+        delivery.tasks.clear()
+        return deliveryRepository.save(delivery)
+    }
+
+
+    private fun validateDeliveryEditable(delivery: Delivery, request: DeliveryUpdateRequest) {
+        if (delivery.status == DeliveryStatus.IN_PROGRESS) {
+            if (!areAllTasksIdsMatching(delivery.tasks, request.tasksIdList))
+                throw DeliveryNotEditableException(UNABLE_TO_EDIT_DELIVERY_TASKS_MESSAGE)
+
+            if (request.date.toEpochDay() != delivery.assignedDate.toEpochDay())
+                throw DeliveryNotEditableException(UNABLE_TO_EDIT_DELIVERY_EMPLOYEE_MESSAGE)
+        }
+    }
+
+
+    private fun validateEmployeeAvailabilityOnDate(employeeId: Long, date: LocalDate) {
+        if (deliveryRepository.isEmployeeAssignedOnDate(employeeId, date))
+            throw DataConflictException(DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE)
+    }
+
+
+    private fun areDatesTheSame(date1: LocalDate, date2: LocalDate): Boolean = date1.toEpochDay() == date2.toEpochDay()
+
+
+    @Transactional
+    fun cancel(id: Long) {
+        var delivery = findById(id)
+
+        validateNotCompleted(delivery)
+
+        delivery = clearDeliveryTasks(delivery)
+        deliveryRepository.delete(delivery)
+    }
+
+
+    @Transactional
+    fun update(id: Long, request: DeliveryUpdateRequest): DeliveryDTO {
+        var delivery = findById(id)
+        val employee = employeeService.findById(request.employeeId)
+
+        if (!areDatesTheSame(delivery.assignedDate, request.date))
+            validateEmployeeAvailabilityOnDate(employee.id, request.date)
+
+        validateNotCompleted(delivery)
+        validateDeliveryEditable(delivery, request)
+
+        val newTasks = findAllTasks(request.tasksIdList)
+
+        delivery = updateDelivery(delivery, request, employee, newTasks)
+        return toDto(deliveryRepository.save(delivery))
+    }
+
+
+    private fun updateDelivery(
+        delivery: Delivery,
+        request: DeliveryUpdateRequest,
+        employee: Employee,
+        newTasks: List<Task>
+    ): Delivery {
+        val deliveryAfterClear = clearDeliveryTasks(delivery)
+
+        deliveryAfterClear.apply {
+            timeMinutes = request.timeMinutes
+            distanceKm = request.distanceKm
+            assignedDate = request.date
+            this.employee = employee
+            tasks.addAll(newTasks)
+        }
+
+        newTasks.forEach { task ->
+            task.delivery = deliveryAfterClear
+            taskRepository.save(task)
+        }
+
+        return deliveryAfterClear
+    }
+
+
+    private fun areAllTasksIdsMatching(tasks: List<Task>, requestTasks: List<DeliveryTask>): Boolean {
+        val deliveryTaskIds = tasks.map { it.id }.toSet()
+        val requestTaskIds = requestTasks.map { it.id }.toSet()
+
+        return deliveryTaskIds == requestTaskIds
+    }
+
+
+    private fun findAllTasks(taskIds: List<DeliveryTask>): List<Task> {
+        return taskIds.map { deliveryTask -> taskService.findById(deliveryTask.id) }.toList()
+    }
+
+
     @Transactional
     fun create(request: DeliveryCreateRequest): DeliveryDTO {
         val employee = employeeService.findById(request.employeeId)
         val tasksList: MutableList<Task> = mutableListOf()
 
-        if (deliveryRepository.isEmployeeAssignedOnDate(employee.id, request.date))
-            throw DataConflictException(DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE)
+        validateEmployeeAvailabilityOnDate(employee.id, request.date)
 
         request.tasksIdList.forEach { taskId ->
             val task = taskService.findById(taskId.id)
@@ -70,15 +177,13 @@ class DeliveryService(
             status = DeliveryStatus.ASSIGNED,
         )
 
-        val deliveryDTO = toDto(deliveryRepository.save(delivery))
-        delivery = findById(deliveryDTO.id)
-
+        val savedDelivery = deliveryRepository.save(delivery)
         tasksList.forEach { task ->
-            task.delivery = delivery
+            task.delivery = savedDelivery
             taskRepository.save(task)
         }
 
-        return deliveryDTO
+        return toDto(savedDelivery)
     }
 
 

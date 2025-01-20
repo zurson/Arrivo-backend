@@ -1,8 +1,9 @@
 package com.arrivo.exceptions
 
+import com.arrivo.utilities.Settings.Companion.ERROR_DATA_CONFLICT_MESSAGE
+import com.arrivo.utilities.Settings.Companion.ERROR_DELIVERY_NOT_EDITABLE_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_EMAIL_ALREADY_IN_USE_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_ID_NOT_FOUND_MESSAGE
-import com.arrivo.utilities.Settings.Companion.ERROR_DATA_CONFLICT_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_INVALID_REQUEST_FORMAT_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_INVALID_VALUE_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_PHONE_NUMBER_EXISTS_MESSAGE
@@ -63,10 +64,21 @@ class GlobalExceptionHandler {
 
 
     @ExceptionHandler(DataConflictException::class)
-    fun handleEmployeeNotFound(ex: DataConflictException): ResponseEntity<ErrorResponseDTO> {
+    fun handleDataConflictException(ex: DataConflictException): ResponseEntity<ErrorResponseDTO> {
         val errorResponse = ErrorResponseDTO(
             code = HttpStatus.CONFLICT.value(),
             errors = listOf(ex.message ?: ERROR_DATA_CONFLICT_MESSAGE)
+        )
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse)
+    }
+
+
+    @ExceptionHandler(DeliveryNotEditableException::class)
+    fun handleDeliveryNotEditableException(ex: DeliveryNotEditableException): ResponseEntity<ErrorResponseDTO> {
+        val errorResponse = ErrorResponseDTO(
+            code = HttpStatus.CONFLICT.value(),
+            errors = listOf(ex.message ?: ERROR_DELIVERY_NOT_EDITABLE_MESSAGE)
         )
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse)

@@ -25,4 +25,21 @@ class DeliveryController(private val service: DeliveryService) {
     fun create(@Valid @RequestBody request: DeliveryCreateRequest): ResponseEntity<DeliveryDTO> {
         return ResponseEntity.ok(service.create(request))
     }
+
+
+    @PutMapping("/{id}")
+    fun update(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: DeliveryUpdateRequest
+    ): ResponseEntity<DeliveryDTO> {
+        return ResponseEntity.ok(service.update(id, request))
+    }
+
+
+    @DeleteMapping("/{id}")
+    fun cancel(@PathVariable id: Long): ResponseEntity<Void> {
+        service.cancel(id)
+        return ResponseEntity.ok().build()
+    }
+
 }
