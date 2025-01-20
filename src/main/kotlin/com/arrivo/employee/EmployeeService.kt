@@ -2,7 +2,10 @@ package com.arrivo.employee
 
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.firebase.FirebaseRepository
+import com.arrivo.security.Role
+import com.arrivo.utilities.Settings.Companion.USER_NOT_FOUND_MESSAGE
 import com.google.firebase.auth.FirebaseAuth
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -12,9 +15,9 @@ class EmployeeService(
     private val firebaseRepo: FirebaseRepository,
 ) {
     fun findAll(): List<EmployeeDTO> {
-        return employeeRepo.findAll().map { emp ->
-            toDTO(emp)
-        }
+        return employeeRepo.findAll()
+            .filter { emp -> emp.role != Role.ADMIN }
+            .map { emp -> toDTO(emp) }
     }
 
 
@@ -35,11 +38,6 @@ class EmployeeService(
             FirebaseAuth.getInstance().deleteUser(firebaseUid)
             throw e
         }
-    }
-
-
-    fun findEmployeeById(id: Long): EmployeeDTO {
-        return toDTO(findById(id))
     }
 
 
@@ -75,6 +73,11 @@ class EmployeeService(
             uid = employee.firebaseUid
         )
 
+        if (request.status == EmployeeStatus.FIRED)
+            firebaseRepo.blockUserAccount(employee.firebaseUid)
+        else if (employee.status == EmployeeStatus.FIRED)
+            firebaseRepo.unlockUserAccount(employee.firebaseUid)
+
         employee.firstName = request.firstName
         employee.lastName = request.lastName
         employee.email = request.email
@@ -88,9 +91,22 @@ class EmployeeService(
                 email = prevEmail,
                 uid = employee.firebaseUid
             )
+            firebaseRepo.unlockUserAccount(employee.firebaseUid)
             throw e
         }
 
     }
+
+
+    fun getUserRole(): Role {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val firebaseUid = authentication.principal as String
+
+        val employee = employeeRepo.findByFirebaseUid(firebaseUid)
+            ?: throw Exception(USER_NOT_FOUND_MESSAGE)
+
+        return employee.role
+    }
+
 
 }

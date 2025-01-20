@@ -16,4 +16,6 @@ interface EmployeeRepository : JpaRepository<Employee, Long> {
     """
     )
     fun findEmployeesNotAssignedOnDate(assignedDate: LocalDate): List<Employee>
+
+    fun findByFirebaseUid(firebaseUid: String): Employee?
 }
