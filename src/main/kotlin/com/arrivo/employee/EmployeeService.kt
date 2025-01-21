@@ -61,6 +61,7 @@ class EmployeeService(
             lastName = emp.lastName,
             phoneNumber = emp.phoneNumber,
             status = emp.status,
+            role = emp.role
         )
     }
 
@@ -98,14 +99,14 @@ class EmployeeService(
     }
 
 
-    fun getUserRole(): Role {
+    fun getUserDetails(): EmployeeDTO {
         val authentication = SecurityContextHolder.getContext().authentication
         val firebaseUid = authentication.principal as String
 
         val employee = employeeRepo.findByFirebaseUid(firebaseUid)
             ?: throw Exception(USER_NOT_FOUND_MESSAGE)
 
-        return employee.role
+        return toDTO(employee)
     }
 
 
