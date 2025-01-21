@@ -1,5 +1,6 @@
 package com.arrivo.employee
 
+import com.arrivo.security.Role
 import com.arrivo.utilities.capitalize
 
 data class EmployeeDTO(
@@ -9,6 +10,7 @@ data class EmployeeDTO(
     var email: String,
     var phoneNumber: String,
     var status: EmployeeStatus,
+    var role: Role
 ) {
     init {
         firstName = capitalize(firstName.lowercase())

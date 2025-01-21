@@ -45,7 +45,7 @@ class FirebaseRepository {
         val auth = FirebaseAuth.getInstance()
 
         auth.updateUser(updateRequest)
-        auth.revokeRefreshTokens(uid)
+        revokeRefreshTokens(uid)
     }
 
 
@@ -56,6 +56,11 @@ class FirebaseRepository {
         val auth = FirebaseAuth.getInstance()
 
         auth.updateUser(updateRequest)
+    }
+
+
+    fun revokeRefreshTokens(uid: String) {
+        FirebaseAuth.getInstance().revokeRefreshTokens(uid)
     }
 
 }

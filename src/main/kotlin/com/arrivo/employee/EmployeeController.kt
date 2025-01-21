@@ -1,6 +1,5 @@
 package com.arrivo.employee;
 
-import com.arrivo.security.Role
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -16,9 +15,10 @@ class EmployeeController(private val service: EmployeeService) {
     fun getAll() = ResponseEntity.ok(service.findAll())
 
 
-    @GetMapping("/role")
-    fun getUserRole(): ResponseEntity<Role> {
-        return ResponseEntity.ok(service.getUserRole())
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @GetMapping("/details")
+    fun getUserDetails(): ResponseEntity<EmployeeDTO> {
+        return ResponseEntity.ok(service.getUserDetails())
     }
 
 
@@ -39,11 +39,8 @@ class EmployeeController(private val service: EmployeeService) {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
-    fun update(
-        @PathVariable id: Long,
-        @RequestBody @Valid request: EmployeeRequest
-    ) {
-        service.update(id, request)
+    fun update(@PathVariable id: Long, @RequestBody @Valid request: EmployeeRequest): ResponseEntity<EmployeeDTO> {
+        return ResponseEntity.ok(service.update(id, request))
     }
 }
 
