@@ -18,11 +18,13 @@ class RoadAccidentService(
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     }
 
+
     fun findAll(): List<RoadAccidentDTO> = repository.findAll().map { roadAccident -> toDto(roadAccident) }
 
 
-    fun findAccidentById(id: Long): RoadAccidentDTO {
-        return toDto(findById(id))
+    fun findAll(id: Long): List<RoadAccidentDTO> {
+        val employee = findEmployeeById(id)
+        return repository.findAllByEmployeeId(employee.id).map { toDto(it) }
     }
 
 
