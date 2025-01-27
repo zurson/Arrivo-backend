@@ -12,13 +12,11 @@ class TrafficEventController(private val service: RoadAccidentService) {
     @GetMapping
     fun getAll(): ResponseEntity<List<RoadAccidentDTO>> = ResponseEntity.ok(service.findAll())
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: Long): ResponseEntity<RoadAccidentDTO> {
-        return ResponseEntity.ok(service.findAccidentById(id))
-    }
+    fun getAll(@PathVariable id: Long): ResponseEntity<List<RoadAccidentDTO>> = ResponseEntity.ok(service.findAll(id))
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping
     fun create(@RequestBody request: RoadAccidentCreateRequest): ResponseEntity<RoadAccidentDTO> {
         return ResponseEntity.ok(service.create(request))
