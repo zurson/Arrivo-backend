@@ -22,6 +22,10 @@ data class Task(
     @Column(nullable = false)
     var addressText: String,
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var status: TaskStatus,
+
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "task_id")
     val products: MutableList<Product> = mutableListOf(),

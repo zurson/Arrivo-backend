@@ -20,13 +20,24 @@ class TaskController(private val service: TaskService) {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{id}")
+    @PostMapping("/{id}")
     fun updateTask(
         @PathVariable id: Long,
         @Valid @RequestBody request: TaskUpdateRequest
     ): ResponseEntity<TaskDTO> {
         return ResponseEntity.ok(service.update(id, request))
     }
+
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PatchMapping("/{id}")
+    fun updateTaskStatus(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: TaskStatusUpdateRequest
+    ): ResponseEntity<TaskDTO> {
+        return ResponseEntity.ok(service.updateTaskStatus(id, request))
+    }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/free-tasks")
