@@ -4,6 +4,7 @@ import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
 
 
 @RestController
@@ -14,6 +15,21 @@ class DeliveryController(private val service: DeliveryService) {
     @GetMapping
     fun getAll(): ResponseEntity<List<DeliveryDTO>> {
         return ResponseEntity.ok(service.findAll())
+    }
+
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @GetMapping("/{id}")
+    fun getByEmployeeId(
+        @PathVariable id: Long,
+        @RequestParam(required = false) date: LocalDate?
+    ): ResponseEntity<DeliveryDTO> {
+        val delivery = service.findByEmployeeId(id, date)
+        return if (delivery == null) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.ok(delivery)
+        }
     }
 
 
@@ -38,6 +54,16 @@ class DeliveryController(private val service: DeliveryService) {
         @Valid @RequestBody request: DeliveryUpdateRequest
     ): ResponseEntity<DeliveryDTO> {
         return ResponseEntity.ok(service.update(id, request))
+    }
+
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PatchMapping("/{id}")
+    fun updateDeliveryStatus(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: DeliveryUpdateStatusRequest
+    ): ResponseEntity<DeliveryDTO> {
+        return ResponseEntity.ok(service.updateDeliveryStatus(id, request))
     }
 
 

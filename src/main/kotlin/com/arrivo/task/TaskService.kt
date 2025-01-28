@@ -27,6 +27,7 @@ class TaskService(private val repository: TaskRepository) {
             title = request.title,
             location = request.location,
             addressText = request.addressText,
+            status = TaskStatus.UNASSIGNED,
             products = mutableListOf()
         )
 
@@ -62,8 +63,14 @@ class TaskService(private val repository: TaskRepository) {
     }
 
 
-    fun deleteById(id: Long) {
-        findById(id).let { repository.deleteById(id) }
+    fun updateTaskStatus(id: Long, request: TaskStatusUpdateRequest): TaskDTO {
+        val task = findById(id)
+
+        task.apply {
+            status = request.status
+        }
+
+        return toDto(repository.save(task))
     }
 
 
@@ -85,15 +92,12 @@ class TaskService(private val repository: TaskRepository) {
 
 
     fun toDto(task: Task): TaskDTO {
-        val status =
-            if (task.delivery == null) TaskStatus.UNASSIGNED else mapDeliveryStatusToTaskStatus(task.delivery?.status)
-
         return TaskDTO(
             id = task.id,
             title = task.title,
             location = task.location,
             addressText = task.addressText,
-            status = status,
+            status = task.status,
             assignedDate = task.delivery?.assignedDate,
             employee = task.delivery?.employee,
             products = task.products

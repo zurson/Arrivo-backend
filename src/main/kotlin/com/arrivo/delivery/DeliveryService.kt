@@ -1,6 +1,5 @@
 package com.arrivo.delivery
 
-import com.arrivo.employee.Employee
 import com.arrivo.employee.EmployeeService
 import com.arrivo.exceptions.DataConflictException
 import com.arrivo.exceptions.DeliveryNotEditableException
@@ -8,6 +7,7 @@ import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.task.Task
 import com.arrivo.task.TaskRepository
 import com.arrivo.task.TaskService
+import com.arrivo.task.TaskStatus
 import com.arrivo.utilities.Settings.Companion.DELIVERY_ALREADY_COMPLETED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_AVAILABLE_TIME_HOURS
@@ -50,19 +50,29 @@ class DeliveryService(
     fun findAll(): List<DeliveryDTO> = deliveryRepository.findAll().map { delivery -> toDto(delivery) }
 
 
+    fun findByEmployeeId(id: Long, date: LocalDate?): DeliveryDTO? {
+        val finalDate = date ?: LocalDate.now()
+        val employee = employeeService.findById(id)
+        val delivery = deliveryRepository.findByEmployeeIdAndAssignedDate(employee.id, finalDate)
+
+        return if (delivery == null) null else toDto(delivery)
+    }
+
+
     private fun validateNotCompleted(delivery: Delivery) {
         if (delivery.status == DeliveryStatus.COMPLETED)
             throw DeliveryNotEditableException(DELIVERY_ALREADY_COMPLETED_MESSAGE)
     }
 
 
-    private fun clearDeliveryTasks(delivery: Delivery): Delivery {
+    private fun clearDeliveryTasks(delivery: Delivery) {
         delivery.tasks.forEach { task ->
             task.delivery = null
+            task.status = TaskStatus.UNASSIGNED
             taskRepository.save(task)
         }
         delivery.tasks.clear()
-        return deliveryRepository.save(delivery)
+        deliveryRepository.save(delivery)
     }
 
 
@@ -88,18 +98,18 @@ class DeliveryService(
 
     @Transactional
     fun cancel(id: Long) {
-        var delivery = findById(id)
+        val delivery = findById(id)
 
         validateNotCompleted(delivery)
 
-        delivery = clearDeliveryTasks(delivery)
+        clearDeliveryTasks(delivery)
         deliveryRepository.delete(delivery)
     }
 
 
     @Transactional
     fun update(id: Long, request: DeliveryUpdateRequest): DeliveryDTO {
-        var delivery = findById(id)
+        val delivery = findById(id)
         val employee = employeeService.findById(request.employeeId)
 
         if (!areDatesTheSame(delivery.assignedDate, request.date))
@@ -110,33 +120,42 @@ class DeliveryService(
 
         val newTasks = findAllTasks(request.tasksIdList)
 
-        delivery = updateDelivery(delivery, request, employee, newTasks)
+        if (!areAllTasksIdsMatching(delivery.tasks, request.tasksIdList)) {
+            delivery.tasks.forEach { task ->
+                task.delivery = null
+                task.status = TaskStatus.UNASSIGNED
+                taskRepository.save(task)
+            }
+
+            newTasks.forEach { task ->
+                task.delivery = delivery
+                task.status = TaskStatus.ASSIGNED
+                taskRepository.save(task)
+            }
+
+            delivery.tasks.clear()
+            delivery.tasks.addAll(newTasks)
+        }
+
+        delivery.apply {
+            this.timeMinutes = request.timeMinutes
+            this.distanceKm = request.distanceKm
+            this.assignedDate = request.date
+            this.employee = employee
+        }
+
         return toDto(deliveryRepository.save(delivery))
     }
 
 
-    private fun updateDelivery(
-        delivery: Delivery,
-        request: DeliveryUpdateRequest,
-        employee: Employee,
-        newTasks: List<Task>
-    ): Delivery {
-        val deliveryAfterClear = clearDeliveryTasks(delivery)
+    fun updateDeliveryStatus(id: Long, request: DeliveryUpdateStatusRequest): DeliveryDTO {
+        val delivery = findById(id)
 
-        deliveryAfterClear.apply {
-            timeMinutes = request.timeMinutes
-            distanceKm = request.distanceKm
-            assignedDate = request.date
-            this.employee = employee
-            tasks.addAll(newTasks)
+        delivery.apply {
+            status = request.status
         }
 
-        newTasks.forEach { task ->
-            task.delivery = deliveryAfterClear
-            taskRepository.save(task)
-        }
-
-        return deliveryAfterClear
+        return toDto(deliveryRepository.save(delivery))
     }
 
 
@@ -168,7 +187,7 @@ class DeliveryService(
             tasksList.add(task)
         }
 
-        var delivery = Delivery(
+        val delivery = Delivery(
             tasks = tasksList,
             timeMinutes = request.timeMinutes,
             distanceKm = request.distanceKm,
@@ -180,6 +199,7 @@ class DeliveryService(
         val savedDelivery = deliveryRepository.save(delivery)
         tasksList.forEach { task ->
             task.delivery = savedDelivery
+            task.status = TaskStatus.ASSIGNED
             taskRepository.save(task)
         }
 
