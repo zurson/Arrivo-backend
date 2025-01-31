@@ -1,11 +1,13 @@
 package com.arrivo.exceptions
 
 import com.arrivo.utilities.Settings.Companion.ERROR_DATA_CONFLICT_MESSAGE
+import com.arrivo.utilities.Settings.Companion.ERROR_DATA_CORRUPTED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_DELIVERY_NOT_EDITABLE_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_EMAIL_ALREADY_IN_USE_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_ID_NOT_FOUND_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_INVALID_REQUEST_FORMAT_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_INVALID_VALUE_MESSAGE
+import com.arrivo.utilities.Settings.Companion.ERROR_OPERATION_UNSUPPORTED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_PHONE_NUMBER_EXISTS_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_TASK_TITLE_ALREADY_EXISTS_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_UNEXPECTED_EXCEPTION_MESSAGE
@@ -74,11 +76,33 @@ class GlobalExceptionHandler {
     }
 
 
+    @ExceptionHandler(DataCorruptedException::class)
+    fun handleDataConflictException(ex: DataCorruptedException): ResponseEntity<ErrorResponseDTO> {
+        val errorResponse = ErrorResponseDTO(
+            code = HttpStatus.CONFLICT.value(),
+            errors = listOf(ex.message ?: ERROR_DATA_CORRUPTED_MESSAGE)
+        )
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse)
+    }
+
+
     @ExceptionHandler(DeliveryNotEditableException::class)
     fun handleDeliveryNotEditableException(ex: DeliveryNotEditableException): ResponseEntity<ErrorResponseDTO> {
         val errorResponse = ErrorResponseDTO(
             code = HttpStatus.CONFLICT.value(),
             errors = listOf(ex.message ?: ERROR_DELIVERY_NOT_EDITABLE_MESSAGE)
+        )
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse)
+    }
+
+
+    @ExceptionHandler(UnsupportedOperationException::class)
+    fun handleDeliveryNotEditableException(ex: UnsupportedOperationException): ResponseEntity<ErrorResponseDTO> {
+        val errorResponse = ErrorResponseDTO(
+            code = HttpStatus.CONFLICT.value(),
+            errors = listOf(ex.message ?: ERROR_OPERATION_UNSUPPORTED_MESSAGE)
         )
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse)

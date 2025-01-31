@@ -47,6 +47,14 @@ class DeliveryController(private val service: DeliveryService) {
     }
 
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PatchMapping("/break/{id}")
+    fun startBreak(@PathVariable id: Long): ResponseEntity<Void> {
+        service.startBreak(id)
+        return ResponseEntity.ok().build()
+    }
+
+
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     fun update(
