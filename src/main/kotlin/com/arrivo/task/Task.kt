@@ -4,6 +4,7 @@ import com.arrivo.delivery.Delivery
 import com.arrivo.task.products.Product
 import com.arrivo.utilities.Location
 import jakarta.persistence.*
+import java.time.LocalDateTime
 
 
 @Entity
@@ -25,6 +26,12 @@ data class Task(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var status: TaskStatus,
+
+    @Column(nullable = true)
+    var startDate: LocalDateTime? = null,
+
+    @Column(nullable = true)
+    var endDate: LocalDateTime? = null,
 
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "task_id")

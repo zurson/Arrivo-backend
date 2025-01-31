@@ -1,16 +1,28 @@
 package com.arrivo.task
 
+import com.arrivo.delivery.DeliveryRepository
+import com.arrivo.delivery.DeliveryService
 import com.arrivo.delivery.DeliveryStatus
 import com.arrivo.exceptions.DataConflictException
+import com.arrivo.exceptions.DataCorruptedException
+import com.arrivo.exceptions.DeliveryNotEditableException
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.task.products.Product
 import com.arrivo.task.products.ProductRequest
+import com.arrivo.utilities.Settings.Companion.DELIVERY_ALREADY_COMPLETED_MESSAGE
+import com.arrivo.utilities.Settings.Companion.NO_DELIVERY_ASSIGNED
+import com.arrivo.utilities.Settings.Companion.TASK_ALREADY_COMPLETED_MESSAGE
 import jakarta.transaction.Transactional
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
-class TaskService(private val repository: TaskRepository) {
-
+class TaskService(
+    private val repository: TaskRepository,
+    private val deliveryService: DeliveryService,
+    @Lazy private val deliveryRepository: DeliveryRepository
+) {
 
     fun findAll(): List<TaskDTO> = repository.findAll().map { task -> toDto(task) }
 
@@ -63,14 +75,39 @@ class TaskService(private val repository: TaskRepository) {
     }
 
 
+    @Transactional
     fun updateTaskStatus(id: Long, request: TaskStatusUpdateRequest): TaskDTO {
-        val task = findById(id)
+        var task = findById(id)
 
-        task.apply {
-            status = request.status
+        if (task.delivery == null)
+            throw DataCorruptedException(NO_DELIVERY_ASSIGNED)
+
+        if (task.delivery!!.status == DeliveryStatus.COMPLETED)
+            throw DeliveryNotEditableException(DELIVERY_ALREADY_COMPLETED_MESSAGE)
+
+        if (task.status == TaskStatus.COMPLETED)
+            throw UnsupportedOperationException(TASK_ALREADY_COMPLETED_MESSAGE)
+
+        if (task.status != TaskStatus.IN_PROGRESS && request.status == TaskStatus.IN_PROGRESS)
+            task.apply { startDate = LocalDateTime.now() }
+
+        if (task.status != TaskStatus.COMPLETED && request.status == TaskStatus.COMPLETED)
+            task.apply { endDate = LocalDateTime.now() }
+
+        if (task.delivery!!.status != DeliveryStatus.IN_PROGRESS) {
+            task.delivery!!.apply {
+                status = DeliveryStatus.IN_PROGRESS
+                startDate = LocalDateTime.now()
+            }
+            deliveryRepository.save(task.delivery!!)
         }
 
-        return toDto(repository.save(task))
+        task.apply { status = request.status }
+
+        task = repository.save(task)
+        deliveryService.finishDelivery(task.delivery!!.id)
+
+        return toDto(task)
     }
 
 
@@ -100,17 +137,9 @@ class TaskService(private val repository: TaskRepository) {
             status = task.status,
             assignedDate = task.delivery?.assignedDate,
             employee = task.delivery?.employee,
-            products = task.products
+            products = task.products,
+            startDate = task.startDate,
+            endDate = task.endDate
         )
-    }
-
-
-    private fun mapDeliveryStatusToTaskStatus(deliveryStatus: DeliveryStatus?): TaskStatus {
-        return when (deliveryStatus) {
-            DeliveryStatus.COMPLETED -> TaskStatus.COMPLETED
-            DeliveryStatus.IN_PROGRESS -> TaskStatus.IN_PROGRESS
-            DeliveryStatus.ASSIGNED -> TaskStatus.ASSIGNED
-            else -> TaskStatus.UNASSIGNED
-        }
     }
 }

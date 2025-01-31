@@ -4,6 +4,7 @@ import com.arrivo.employee.Employee
 import com.arrivo.task.Task
 import jakarta.persistence.*
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity
 data class Delivery(
@@ -23,6 +24,15 @@ data class Delivery(
 
     @Column(nullable = false)
     var assignedDate: LocalDate,
+
+    @Column(nullable = true)
+    var startDate: LocalDateTime? = null,
+
+    @Column(nullable = true)
+    var endDate: LocalDateTime? = null,
+
+    @Column(nullable = true)
+    var breakDate: LocalDateTime? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

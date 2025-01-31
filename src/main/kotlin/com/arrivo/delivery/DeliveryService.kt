@@ -9,7 +9,9 @@ import com.arrivo.task.TaskRepository
 import com.arrivo.task.TaskService
 import com.arrivo.task.TaskStatus
 import com.arrivo.utilities.Settings.Companion.DELIVERY_ALREADY_COMPLETED_MESSAGE
+import com.arrivo.utilities.Settings.Companion.DELIVERY_BREAK_ALREADY_USED
 import com.arrivo.utilities.Settings.Companion.DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE
+import com.arrivo.utilities.Settings.Companion.DELIVERY_NOT_IN_PROGRESS_MESSAGE
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_AVAILABLE_TIME_HOURS
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_TASK_LABEL_PREFIX
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_TIME_DEFAULT_START
@@ -22,6 +24,7 @@ import com.google.maps.routeoptimization.v1.Shipment.VisitRequest
 import com.google.protobuf.Timestamp
 import com.google.type.LatLng
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.*
@@ -32,7 +35,7 @@ import kotlin.math.ceil
 @Service
 class DeliveryService(
     private val deliveryRepository: DeliveryRepository,
-    private val taskService: TaskService,
+    @Lazy private val taskService: TaskService,
     private val employeeService: EmployeeService,
     private val taskRepository: TaskRepository
 ) {
@@ -65,14 +68,24 @@ class DeliveryService(
     }
 
 
-    private fun clearDeliveryTasks(delivery: Delivery) {
-        delivery.tasks.forEach { task ->
-            task.delivery = null
-            task.status = TaskStatus.UNASSIGNED
-            taskRepository.save(task)
+    @Transactional
+    fun finishDelivery(deliveryId: Long) {
+        val delivery = findById(deliveryId)
+
+        if (!shouldDeliveryBeFinished(delivery.tasks))
+            return
+
+        delivery.apply {
+            status = DeliveryStatus.COMPLETED
+            endDate = LocalDateTime.now()
         }
-        delivery.tasks.clear()
+
         deliveryRepository.save(delivery)
+    }
+
+
+    private fun shouldDeliveryBeFinished(tasks: List<Task>): Boolean {
+        return tasks.all { it.status == TaskStatus.COMPLETED }
     }
 
 
@@ -96,6 +109,23 @@ class DeliveryService(
     private fun areDatesTheSame(date1: LocalDate, date2: LocalDate): Boolean = date1.toEpochDay() == date2.toEpochDay()
 
 
+    private fun clearDeliveryTasks(delivery: Delivery) {
+        delivery.tasks.forEach { task ->
+            task.apply {
+                this.delivery = null
+                this.status = TaskStatus.UNASSIGNED
+                this.startDate = null
+                this.endDate = null
+            }
+
+            taskRepository.save(task)
+        }
+
+        delivery.tasks.clear()
+        deliveryRepository.save(delivery)
+    }
+
+
     @Transactional
     fun cancel(id: Long) {
         val delivery = findById(id)
@@ -104,6 +134,24 @@ class DeliveryService(
 
         clearDeliveryTasks(delivery)
         deliveryRepository.delete(delivery)
+    }
+
+
+    @Transactional
+    fun startBreak(id: Long) {
+        val delivery = findById(id)
+
+        if (delivery.status != DeliveryStatus.IN_PROGRESS)
+            throw UnsupportedOperationException(DELIVERY_NOT_IN_PROGRESS_MESSAGE)
+
+        if (delivery.breakDate != null)
+            throw UnsupportedOperationException(DELIVERY_BREAK_ALREADY_USED)
+
+        delivery.apply {
+            breakDate = LocalDateTime.now()
+        }
+
+        deliveryRepository.save(delivery)
     }
 
 
@@ -324,6 +372,9 @@ class DeliveryService(
             timeMinutes = delivery.timeMinutes,
             distanceKm = delivery.distanceKm,
             assignedDate = delivery.assignedDate,
+            startDate = delivery.startDate,
+            endDate = delivery.endDate,
+            breakDate = delivery.breakDate,
             status = delivery.status,
             employee = employeeService.toDTO(delivery.employee),
         )
