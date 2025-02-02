@@ -1,11 +1,16 @@
-FROM gradle:8.12-jdk21 AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
-RUN gradle build --no-daemon -x test
+FROM gradle:8.12-jdk21 AS builder
+WORKDIR /arrivo/server
 
-FROM eclipse-temurin:21-alpine
-EXPOSE 8080
-RUN mkdir /app
+COPY . .
 
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/spring-boot-application.jar
-ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseContainerSupport", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/spring-boot-application.jar"]
+RUN gradle clean build --parallel
+
+FROM eclipse-temurin:21
+WORKDIR /arrivo/server
+
+RUN apt-get update && apt-get install -y openssl
+
+COPY --from=builder /arrivo/server/build/libs/*.jar server.jar
+COPY --from=builder /arrivo/server/src/main/resources/application_default_credentials.json /arrivo/server/application_default_credentials.json
+
+CMD ["java", "-jar", "server.jar"]

@@ -14,8 +14,10 @@ class SqlDataLoader(
 
     fun loadData() {
         try {
-            val sqlContent = Files.readString(sqlFile.file.toPath())
-            jdbcTemplate.execute(sqlContent)
+            sqlFile.inputStream.use { inputStream ->
+                val sqlContent = inputStream.bufferedReader().use { it.readText() }
+                jdbcTemplate.execute(sqlContent)
+            }
 
             println("Data loaded successfully from SQL file.")
         } catch (e: Exception) {
