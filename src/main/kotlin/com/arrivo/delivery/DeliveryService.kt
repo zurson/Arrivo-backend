@@ -13,7 +13,10 @@ import com.arrivo.utilities.Settings.Companion.DELIVERY_BREAK_ALREADY_USED
 import com.arrivo.utilities.Settings.Companion.DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_NOT_IN_PROGRESS_MESSAGE
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_AVAILABLE_TIME_HOURS
+import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_CAR_COST_PER_HOUR
+import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_CAR_COST_PER_KILOMETER
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_TASK_LABEL_PREFIX
+import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_TIMEOUT_SECONDS
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_TIME_DEFAULT_START
 import com.arrivo.utilities.Settings.Companion.OPTIMIZATION_VEHICLE_LABEL
 import com.arrivo.utilities.Settings.Companion.TIME_EXCEED_BORDER
@@ -287,6 +290,8 @@ class DeliveryService(
                     .setStartLocation(LatLng.newBuilder().setLatitude(52.1234).setLongitude(22.1234))
                     .setEndLocation(LatLng.newBuilder().setLatitude(52.1234).setLongitude(22.1234))
                     .setLabel(OPTIMIZATION_VEHICLE_LABEL)
+                    .setCostPerHour(OPTIMIZATION_CAR_COST_PER_HOUR)
+                    .setCostPerKilometer(OPTIMIZATION_CAR_COST_PER_KILOMETER)
                     .build()
             )
 
@@ -310,6 +315,7 @@ class DeliveryService(
                 .setConsiderRoadTraffic(true)
                 .setSearchMode(OptimizeToursRequest.SearchMode.CONSUME_ALL_AVAILABLE_TIME)
                 .setParent("projects/$projectId")
+                .setTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(OPTIMIZATION_TIMEOUT_SECONDS))
                 .setModel(shipmentModel)
                 .build()
 

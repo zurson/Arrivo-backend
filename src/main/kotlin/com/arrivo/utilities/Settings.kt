@@ -32,6 +32,9 @@ class Settings {
         const val TIME_EXCEED_BORDER = 480 // 8h
         const val OPTIMIZATION_TIME_DEFAULT_START = 8 // 8 AM
         const val OPTIMIZATION_AVAILABLE_TIME_HOURS = 8
+        const val OPTIMIZATION_TIMEOUT_SECONDS: Long = 9L
+        const val OPTIMIZATION_CAR_COST_PER_HOUR: Double = 50.0
+        const val OPTIMIZATION_CAR_COST_PER_KILOMETER: Double = 0.5
 
         // TASKS
         const val NO_DELIVERY_ASSIGNED = "No delivery has been assigned to this task"
