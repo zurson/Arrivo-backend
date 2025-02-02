@@ -33,11 +33,11 @@ data class Task(
     @Column(nullable = true)
     var endDate: LocalDateTime? = null,
 
-    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "task_id")
     val products: MutableList<Product> = mutableListOf(),
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "delivery_id", nullable = true)
     var delivery: Delivery? = null
 

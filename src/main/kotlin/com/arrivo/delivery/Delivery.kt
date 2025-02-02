@@ -12,7 +12,7 @@ data class Delivery(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @OneToMany
+    @OneToMany(fetch = FetchType.EAGER)
     @OrderColumn(name = "task_order")
     val tasks: MutableList<Task> = mutableListOf(),
 
