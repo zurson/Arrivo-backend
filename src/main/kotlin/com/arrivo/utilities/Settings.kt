@@ -27,9 +27,10 @@ class Settings {
             "The employee is already assigned to some delivery at this time"
         const val UNABLE_TO_EDIT_DELIVERY_TASKS_MESSAGE = "Unable to edit tasks during delivery in progress"
         const val UNABLE_TO_EDIT_DELIVERY_EMPLOYEE_MESSAGE = "Unable to edit delivery date during delivery in progress"
-        const val DELIVERY_ALREADY_COMPLETED_MESSAGE = "Delivery already completed!"
+        const val DELIVERY_ALREADY_COMPLETED_MESSAGE = "Delivery already completed"
+        const val DELIVERY_NOT_COMPLETED_MESSAGE = "Delivery is not completed"
         const val DELIVERY_NOT_IN_PROGRESS_MESSAGE = "Delivery is not in progress"
-        const val DELIVERY_BREAK_ALREADY_USED = "Break has been already used!"
+        const val DELIVERY_BREAK_ALREADY_USED = "Break has been already used"
 
         const val OPTIMIZATION_VEHICLE_LABEL = "Vehicle"
         const val OPTIMIZATION_TASK_LABEL_PREFIX = "Task-"

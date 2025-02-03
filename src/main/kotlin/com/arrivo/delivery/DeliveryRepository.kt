@@ -1,5 +1,6 @@
 package com.arrivo.delivery
 
+import com.arrivo.company.Company
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -17,5 +18,12 @@ interface DeliveryRepository : JpaRepository<Delivery, Long> {
 
     @Query("SELECT d FROM Delivery d WHERE d.company.id = :companyId")
     fun findAllDeliveriesInCompany(companyId: Long): List<Delivery>
+
+    fun findByAssignedDateBetweenAndStatusAndCompany(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        status: DeliveryStatus,
+        company: Company
+    ): List<Delivery>
 
 }

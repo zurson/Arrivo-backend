@@ -88,8 +88,8 @@ class GlobalExceptionHandler {
     }
 
 
-    @ExceptionHandler(DeliveryNotEditableException::class)
-    fun handleDeliveryNotEditableException(ex: DeliveryNotEditableException): ResponseEntity<ErrorResponseDTO> {
+    @ExceptionHandler(DeliveryException::class)
+    fun handleDeliveryNotEditableException(ex: DeliveryException): ResponseEntity<ErrorResponseDTO> {
         val errorResponse = ErrorResponseDTO(
             code = HttpStatus.CONFLICT.value(),
             errors = listOf(ex.message ?: ERROR_DELIVERY_NOT_EDITABLE_MESSAGE)
