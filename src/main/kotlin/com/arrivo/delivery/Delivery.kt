@@ -1,6 +1,7 @@
 package com.arrivo.delivery
 
 import com.arrivo.company.Company
+import com.arrivo.delivery.routes_tracker.DeliveryRoute
 import com.arrivo.employee.Employee
 import com.arrivo.task.Task
 import com.fasterxml.jackson.annotation.JsonBackReference
@@ -24,6 +25,10 @@ data class Delivery(
     @OneToMany
     @OrderColumn(name = "task_order")
     val tasks: MutableList<Task> = mutableListOf(),
+
+    @JsonManagedReference
+    @OneToMany(mappedBy = "delivery", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    val routes: MutableList<DeliveryRoute> = mutableListOf(),
 
     @Column(nullable = false)
     var timeMinutes: Int = 0,

@@ -101,7 +101,7 @@ class TaskService(
             throw DataCorruptedException(NO_DELIVERY_ASSIGNED)
 
         if (task.delivery!!.status == DeliveryStatus.COMPLETED)
-            throw DeliveryNotEditableException(DELIVERY_ALREADY_COMPLETED_MESSAGE)
+            throw DeliveryException(DELIVERY_ALREADY_COMPLETED_MESSAGE)
 
         if (task.status == TaskStatus.COMPLETED)
             throw UnsupportedOperationException(TASK_ALREADY_COMPLETED_MESSAGE)

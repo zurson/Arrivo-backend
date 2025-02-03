@@ -1,5 +1,7 @@
 package com.arrivo.delivery
 
+import com.arrivo.delivery.routes_tracker.DeliveryRouteDTO
+import com.arrivo.delivery.routes_tracker.TrackPointInsertRequest
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -82,4 +84,18 @@ class DeliveryController(private val service: DeliveryService) {
         return ResponseEntity.ok().build()
     }
 
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PostMapping("/tracking")
+    fun addRoutePoints(@Valid @RequestBody request: TrackPointInsertRequest): ResponseEntity<Void> {
+        service.addRoutePoints(request)
+        return ResponseEntity.ok().build()
+    }
+
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/tracking/{deliveryId}")
+    fun getDeliveryRoutePoints(@PathVariable deliveryId: Long): ResponseEntity<List<DeliveryRouteDTO>> {
+        return ResponseEntity.ok(service.getDeliveryRoutePoints(deliveryId))
+    }
 }

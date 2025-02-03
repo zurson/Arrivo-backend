@@ -1,16 +1,20 @@
 package com.arrivo.delivery
 
 import com.arrivo.company.CompanyService
+import com.arrivo.delivery.routes_tracker.DeliveryRoute
+import com.arrivo.delivery.routes_tracker.DeliveryRouteDTO
+import com.arrivo.delivery.routes_tracker.TrackPointInsertRequest
 import com.arrivo.employee.EmployeeService
 import com.arrivo.exceptions.CompanyException
 import com.arrivo.exceptions.DataConflictException
-import com.arrivo.exceptions.DeliveryNotEditableException
+import com.arrivo.exceptions.DeliveryException
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.firebase.FirebaseService
 import com.arrivo.task.Task
 import com.arrivo.task.TaskRepository
 import com.arrivo.task.TaskService
 import com.arrivo.task.TaskStatus
+import com.arrivo.utilities.Location
 import com.arrivo.utilities.Settings.Companion.COMPANY_EXCEPTION_ERROR_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_ALREADY_COMPLETED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_BREAK_ALREADY_USED
@@ -79,7 +83,7 @@ class DeliveryService(
 
     private fun validateNotCompleted(delivery: Delivery) {
         if (delivery.status == DeliveryStatus.COMPLETED)
-            throw DeliveryNotEditableException(DELIVERY_ALREADY_COMPLETED_MESSAGE)
+            throw DeliveryException(DELIVERY_ALREADY_COMPLETED_MESSAGE)
     }
 
 
@@ -107,10 +111,10 @@ class DeliveryService(
     private fun validateDeliveryEditable(delivery: Delivery, request: DeliveryUpdateRequest) {
         if (delivery.status == DeliveryStatus.IN_PROGRESS) {
             if (!areAllTasksIdsMatching(delivery.tasks, request.tasksIdList))
-                throw DeliveryNotEditableException(UNABLE_TO_EDIT_DELIVERY_TASKS_MESSAGE)
+                throw DeliveryException(UNABLE_TO_EDIT_DELIVERY_TASKS_MESSAGE)
 
             if (request.date.toEpochDay() != delivery.assignedDate.toEpochDay())
-                throw DeliveryNotEditableException(UNABLE_TO_EDIT_DELIVERY_EMPLOYEE_MESSAGE)
+                throw DeliveryException(UNABLE_TO_EDIT_DELIVERY_EMPLOYEE_MESSAGE)
         }
     }
 
@@ -427,5 +431,50 @@ class DeliveryService(
             .setSeconds(instant.toEpochMilli() / 1000)
             .setNanos((((instant.toEpochMilli() % 1000) * 1000000).toInt()))
             .build()
+    }
+
+
+    @Transactional
+    fun addRoutePoints(request: TrackPointInsertRequest) {
+        val deliveryId = request.deliveryId
+        val delivery = findById(deliveryId)
+
+        if (!firebaseService.deliveryBelongsToUserCompany(deliveryId))
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
+
+        if (delivery.status == DeliveryStatus.COMPLETED)
+            throw DeliveryException(DELIVERY_ALREADY_COMPLETED_MESSAGE)
+
+        request.points.forEach { point ->
+            val p = DeliveryRoute(
+                latitude = point.location.latitude,
+                longitude = point.location.longitude,
+                timestamp = point.timestamp,
+                delivery = delivery
+            )
+
+            delivery.routes.add(p)
+        }
+
+        deliveryRepository.save(delivery)
+    }
+
+
+    @Transactional
+    fun getDeliveryRoutePoints(deliveryId: Long): List<DeliveryRouteDTO> {
+        val delivery = findById(deliveryId)
+
+//        if (delivery.status != DeliveryStatus.COMPLETED)
+//            throw DeliveryException(DELIVERY_NOT_COMPLETED_MESSAGE)
+
+        return delivery.routes.sortedBy { it.timestamp }.map { toRouteDto(it) }
+    }
+
+
+    private fun toRouteDto(deliveryRoute: DeliveryRoute): DeliveryRouteDTO {
+        return DeliveryRouteDTO(
+            location = Location(deliveryRoute.latitude, deliveryRoute.longitude),
+            timestamp = deliveryRoute.timestamp
+        )
     }
 }
