@@ -26,8 +26,4 @@ data class DeliveryUpdateRequest(
     @field:NotNull(message = "Date cannot be null")
     @field:FutureOrPresent(message = "Date cannot be in the past")
     val date: LocalDate,
-
-//    @Enumerated(EnumType.STRING)
-//    @NotNull(message = "Delivery status cannot be null")
-//    var status: DeliveryStatus
 )

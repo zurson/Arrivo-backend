@@ -1,5 +1,6 @@
 package com.arrivo.employee
 
+import com.arrivo.company.Company
 import com.arrivo.security.Role
 import jakarta.persistence.*
 import jakarta.validation.constraints.Email
@@ -8,6 +9,10 @@ import jakarta.validation.constraints.Email
 data class Employee(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "company_id", nullable = false)
+    val company: Company,
 
     @Column(nullable = false, unique = true)
     val firebaseUid: String,

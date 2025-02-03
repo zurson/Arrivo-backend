@@ -2,16 +2,18 @@ package com.arrivo.road_accidents
 
 import com.arrivo.employee.Employee
 import com.arrivo.employee.EmployeeService
+import com.arrivo.exceptions.CompanyException
 import com.arrivo.exceptions.IdNotFoundException
+import com.arrivo.firebase.FirebaseService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Service
 class RoadAccidentService(
     private val repository: RoadAccidentRepository,
-    private val employeeService: EmployeeService
+    private val employeeService: EmployeeService,
+    private val firebaseService: FirebaseService
 ) {
 
     companion object {
@@ -19,12 +21,31 @@ class RoadAccidentService(
     }
 
 
-    fun findAll(): List<RoadAccidentDTO> = repository.findAll().map { roadAccident -> toDto(roadAccident) }
+    @Transactional
+    fun findAll(): List<RoadAccidentDTO> {
+        val company = firebaseService.getUserCompany()
+        return repository.findAllAccidentsInCompany(company.id).map { roadAccident -> toDto(roadAccident) }
+    }
 
 
+    @Transactional
     fun findAll(id: Long): List<RoadAccidentDTO> {
         val employee = findEmployeeById(id)
-        return repository.findAllByEmployeeId(employee.id).map { toDto(it) }
+
+        println("SZUKAM WSZYSTKICH DLA PRACOWNIKA ${employee.firstName}")
+
+        if (!firebaseService.employeeBelongsToUserCompany(employee.id))
+            throw CompanyException("This employee does not belong to your company")
+
+        println("JEST OKEJ")
+
+        val company = firebaseService.getUserCompany()
+        val result = repository.findAllByEmployeeId(employee.id, company.id).map { toDto(it) }
+
+        println("RESULT:")
+        result.forEach { r -> println(r) }
+
+        return result
     }
 
 
@@ -72,6 +93,7 @@ class RoadAccidentService(
     }
 
 
+    @Transactional
     fun markAsResolved(id: Long): RoadAccidentDTO {
         val accident = findById(id)
 
@@ -80,13 +102,6 @@ class RoadAccidentService(
         }
 
         return toDto(repository.save(accident))
-    }
-
-
-    fun deleteById(id: Long) {
-        findById(id).let {
-            repository.deleteById(id)
-        }
     }
 
 
@@ -107,7 +122,4 @@ class RoadAccidentService(
             employee = roadAccident.employee,
         )
     }
-
-
-    private fun formatDate(dateString: String): LocalDate = LocalDate.parse(dateString, DATE_FORMATTER)
 }

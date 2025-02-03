@@ -24,7 +24,7 @@ class EmployeeController(private val service: EmployeeService) {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    fun createAccount(@RequestBody @Valid request: EmployeeRequest): ResponseEntity<EmployeeDTO> {
+    fun createAccount(@RequestBody @Valid request: EmployeeCreateAccountRequest): ResponseEntity<EmployeeDTO> {
         return ResponseEntity.ok(service.createAccount(request))
     }
 
@@ -39,7 +39,7 @@ class EmployeeController(private val service: EmployeeService) {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
-    fun update(@PathVariable id: Long, @RequestBody @Valid request: EmployeeRequest): ResponseEntity<EmployeeDTO> {
+    fun update(@PathVariable id: Long, @RequestBody @Valid request: EmployeeUpdateAccountRequest): ResponseEntity<EmployeeDTO> {
         return ResponseEntity.ok(service.update(id, request))
     }
 }

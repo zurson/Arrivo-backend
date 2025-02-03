@@ -7,3 +7,5 @@ class DataConflictException(message: String) : RuntimeException(message)
 class DeliveryNotEditableException(message: String) : RuntimeException(message)
 
 class DataCorruptedException(message: String) : RuntimeException(message)
+
+class CompanyException(message: String): RuntimeException(message)

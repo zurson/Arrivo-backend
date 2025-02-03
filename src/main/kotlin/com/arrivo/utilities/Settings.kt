@@ -11,6 +11,7 @@ class Settings {
         const val ERROR_DATA_CORRUPTED_MESSAGE = "Data corrupted"
         const val ERROR_OPERATION_UNSUPPORTED_MESSAGE = "Operation unsupported"
         const val ERROR_DELIVERY_NOT_EDITABLE_MESSAGE = "Unable to edit delivery"
+        const val ERROR_DATA_ACCESS_MESSAGE = "Data access exception"
         const val ERROR_UNEXPECTED_EXCEPTION_MESSAGE = "Unexpected exception"
         const val ERROR_PHONE_NUMBER_EXISTS_MESSAGE = "Phone number already exists"
         const val ERROR_EMAIL_ALREADY_IN_USE_MESSAGE = "Email already in use"

@@ -1,5 +1,6 @@
 package com.arrivo.availale_products
 
+import com.arrivo.company.Company
 import jakarta.persistence.*
 
 @Entity
@@ -9,5 +10,9 @@ data class AvailableProduct(
     val id: Long? = null,
 
     @Column(unique = true, nullable = false)
-    val name: String
+    val name: String,
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "company_id", nullable = false)
+    val company: Company,
 )

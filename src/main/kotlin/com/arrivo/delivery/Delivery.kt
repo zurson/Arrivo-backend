@@ -1,5 +1,6 @@
 package com.arrivo.delivery
 
+import com.arrivo.company.Company
 import com.arrivo.employee.Employee
 import com.arrivo.task.Task
 import jakarta.persistence.*
@@ -12,7 +13,11 @@ data class Delivery(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @OneToMany(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "company_id", nullable = false)
+    val company: Company,
+
+    @OneToMany
     @OrderColumn(name = "task_order")
     val tasks: MutableList<Task> = mutableListOf(),
 

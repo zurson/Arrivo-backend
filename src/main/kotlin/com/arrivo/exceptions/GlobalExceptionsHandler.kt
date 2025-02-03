@@ -1,5 +1,6 @@
 package com.arrivo.exceptions
 
+import com.arrivo.utilities.Settings.Companion.ERROR_DATA_ACCESS_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_DATA_CONFLICT_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_DATA_CORRUPTED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.ERROR_DELIVERY_NOT_EDITABLE_MESSAGE
@@ -95,6 +96,17 @@ class GlobalExceptionHandler {
         )
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse)
+    }
+
+
+    @ExceptionHandler(CompanyException::class)
+    fun handleDeliveryNotEditableException(ex: CompanyException): ResponseEntity<ErrorResponseDTO> {
+        val errorResponse = ErrorResponseDTO(
+            code = HttpStatus.CONFLICT.value(),
+            errors = listOf(ex.message ?: ERROR_DATA_ACCESS_MESSAGE)
+        )
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse)
     }
 
 

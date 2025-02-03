@@ -1,5 +1,6 @@
 package com.arrivo.task
 
+import com.arrivo.company.Company
 import com.arrivo.delivery.Delivery
 import com.arrivo.task.products.Product
 import com.arrivo.utilities.Location
@@ -12,6 +13,10 @@ data class Task(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "company_id", nullable = false)
+    val company: Company,
 
     @Column(nullable = false)
     var title: String,
@@ -33,11 +38,11 @@ data class Task(
     @Column(nullable = true)
     var endDate: LocalDateTime? = null,
 
-    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "task_id")
     val products: MutableList<Product> = mutableListOf(),
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "delivery_id", nullable = true)
     var delivery: Delivery? = null
 
