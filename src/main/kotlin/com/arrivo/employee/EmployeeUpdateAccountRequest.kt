@@ -1,11 +1,10 @@
 package com.arrivo.employee
 
-import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Pattern
-import jakarta.validation.constraints.Size
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.validation.constraints.*
 
-data class EmployeeRequest(
+data class EmployeeUpdateAccountRequest(
     @field:NotBlank(message = "First name cannot be blank")
     @field:Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
     var firstName: String,
@@ -24,7 +23,10 @@ data class EmployeeRequest(
     )
     val phoneNumber: String,
 
-    val status: EmployeeStatus = EmployeeStatus.HIRED
+    @Enumerated(EnumType.STRING)
+    @field:NotNull(message = "Employee status cannot be null")
+    val status: EmployeeStatus
+
 ) {
     init {
         firstName = firstName.uppercase()

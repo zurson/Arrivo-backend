@@ -1,13 +1,17 @@
 package com.arrivo.delivery
 
+import com.arrivo.company.CompanyService
 import com.arrivo.employee.EmployeeService
+import com.arrivo.exceptions.CompanyException
 import com.arrivo.exceptions.DataConflictException
 import com.arrivo.exceptions.DeliveryNotEditableException
 import com.arrivo.exceptions.IdNotFoundException
+import com.arrivo.firebase.FirebaseService
 import com.arrivo.task.Task
 import com.arrivo.task.TaskRepository
 import com.arrivo.task.TaskService
 import com.arrivo.task.TaskStatus
+import com.arrivo.utilities.Settings.Companion.COMPANY_EXCEPTION_ERROR_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_ALREADY_COMPLETED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_BREAK_ALREADY_USED
 import com.arrivo.utilities.Settings.Companion.DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE
@@ -37,14 +41,17 @@ import kotlin.math.ceil
 
 @Service
 class DeliveryService(
-    private val deliveryRepository: DeliveryRepository,
+    @Lazy private val deliveryRepository: DeliveryRepository,
     @Lazy private val taskService: TaskService,
-    private val employeeService: EmployeeService,
-    private val taskRepository: TaskRepository
+    @Lazy private val employeeService: EmployeeService,
+    @Lazy private val taskRepository: TaskRepository,
+    @Lazy private val companyService: CompanyService,
+    @Lazy private val firebaseService: FirebaseService
 ) {
 
     @Value("\${gcp.project.id}")
     private val projectId: String? = null
+
 
     private fun findById(id: Long): Delivery {
         return deliveryRepository.findById(id).orElseThrow {
@@ -53,13 +60,18 @@ class DeliveryService(
     }
 
 
-    fun findAll(): List<DeliveryDTO> = deliveryRepository.findAll().map { delivery -> toDto(delivery) }
+    fun findAll(): List<DeliveryDTO> {
+        val company = firebaseService.getUserCompany()
+        return deliveryRepository.findAllDeliveriesInCompany(company.id).map { delivery -> toDto(delivery) }
+    }
 
 
+    @Transactional
     fun findByEmployeeId(id: Long, date: LocalDate?): DeliveryDTO? {
         val finalDate = date ?: LocalDate.now()
+        val company = firebaseService.getUserCompany()
         val employee = employeeService.findById(id)
-        val delivery = deliveryRepository.findByEmployeeIdAndAssignedDate(employee.id, finalDate)
+        val delivery = deliveryRepository.findByEmployeeIdAndAssignedDate(employee.id, finalDate, company.id)
 
         return if (delivery == null) null else toDto(delivery)
     }
@@ -133,6 +145,9 @@ class DeliveryService(
     fun cancel(id: Long) {
         val delivery = findById(id)
 
+        if (!firebaseService.deliveryBelongsToUserCompany(delivery.id))
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
+
         validateNotCompleted(delivery)
 
         clearDeliveryTasks(delivery)
@@ -143,6 +158,9 @@ class DeliveryService(
     @Transactional
     fun startBreak(id: Long) {
         val delivery = findById(id)
+
+        if (!firebaseService.deliveryBelongsToUserCompany(delivery.id))
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         if (delivery.status != DeliveryStatus.IN_PROGRESS)
             throw UnsupportedOperationException(DELIVERY_NOT_IN_PROGRESS_MESSAGE)
@@ -162,6 +180,9 @@ class DeliveryService(
     fun update(id: Long, request: DeliveryUpdateRequest): DeliveryDTO {
         val delivery = findById(id)
         val employee = employeeService.findById(request.employeeId)
+
+        if (!firebaseService.deliveryBelongsToUserCompany(delivery.id))
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         if (!areDatesTheSame(delivery.assignedDate, request.date))
             validateEmployeeAvailabilityOnDate(employee.id, request.date)
@@ -199,8 +220,12 @@ class DeliveryService(
     }
 
 
-    fun updateDeliveryStatus(id: Long, request: DeliveryUpdateStatusRequest): DeliveryDTO {
-        val delivery = findById(id)
+    @Transactional
+    fun updateDeliveryStatus(deliveryId: Long, request: DeliveryUpdateStatusRequest): DeliveryDTO {
+        val delivery = findById(deliveryId)
+
+        if (!firebaseService.deliveryBelongsToUserCompany(delivery.id))
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         delivery.apply {
             status = request.status
@@ -226,6 +251,8 @@ class DeliveryService(
     @Transactional
     fun create(request: DeliveryCreateRequest): DeliveryDTO {
         val employee = employeeService.findById(request.employeeId)
+        val company = firebaseService.getUserCompany()
+
         val tasksList: MutableList<Task> = mutableListOf()
 
         validateEmployeeAvailabilityOnDate(employee.id, request.date)
@@ -245,6 +272,7 @@ class DeliveryService(
             employee = employee,
             assignedDate = request.date,
             status = DeliveryStatus.ASSIGNED,
+            company = company
         )
 
         val savedDelivery = deliveryRepository.save(delivery)
@@ -254,12 +282,19 @@ class DeliveryService(
             taskRepository.save(task)
         }
 
+        company.deliveries.add(savedDelivery)
+        companyService.save(company)
+
         return toDto(savedDelivery)
     }
 
 
     fun optimizeTours(optimizeRoutesRequest: OptimizeRoutesRequest): OptimizedRoutesResponse {
         val tasks: List<TaskToOptimize> = optimizeRoutesRequest.tasksToOptimize
+        val company = firebaseService.getUserCompany()
+
+        val latitude = company.location.latitude
+        val longitude = company.location.longitude
 
         val clientSettings = RouteOptimizationSettings.newBuilder()
             .setTransportChannelProvider(
@@ -287,8 +322,8 @@ class DeliveryService(
 
             val vehicles = listOf(
                 Vehicle.newBuilder()
-                    .setStartLocation(LatLng.newBuilder().setLatitude(52.1234).setLongitude(22.1234))
-                    .setEndLocation(LatLng.newBuilder().setLatitude(52.1234).setLongitude(22.1234))
+                    .setStartLocation(LatLng.newBuilder().setLatitude(latitude).setLongitude(longitude))
+                    .setEndLocation(LatLng.newBuilder().setLatitude(latitude).setLongitude(longitude))
                     .setLabel(OPTIMIZATION_VEHICLE_LABEL)
                     .setCostPerHour(OPTIMIZATION_CAR_COST_PER_HOUR)
                     .setCostPerKilometer(OPTIMIZATION_CAR_COST_PER_KILOMETER)

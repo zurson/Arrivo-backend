@@ -32,4 +32,5 @@ class FirebaseConfig {
     fun createFirebaseAuth(): FirebaseAuth {
         return FirebaseAuth.getInstance()
     }
+    
 }

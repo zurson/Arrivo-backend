@@ -1,39 +1,56 @@
 package com.arrivo.employee
 
+import com.arrivo.company.CompanyService
+import com.arrivo.exceptions.CompanyException
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.firebase.FirebaseRepository
+import com.arrivo.firebase.FirebaseService
 import com.arrivo.security.Role
+import com.arrivo.utilities.Settings.Companion.COMPANY_EXCEPTION_ERROR_MESSAGE
 import com.arrivo.utilities.Settings.Companion.USER_NOT_FOUND_MESSAGE
 import com.google.firebase.auth.FirebaseAuth
+import org.springframework.context.annotation.Lazy
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 @Service
 class EmployeeService(
-    private val employeeRepo: EmployeeRepository,
-    private val firebaseRepo: FirebaseRepository,
+    @Lazy private val employeeRepository: EmployeeRepository,
+    @Lazy private val firebaseRepo: FirebaseRepository,
+    @Lazy private val firebaseService: FirebaseService,
+    @Lazy private val companyService: CompanyService,
 ) {
+
     fun findAll(): List<EmployeeDTO> {
-        return employeeRepo.findAll()
+        val company = firebaseService.getUserCompany()
+        return employeeRepository.findAllEmployeesInCompany(company.id)
             .filter { emp -> emp.role != Role.ADMIN }
             .map { emp -> toDTO(emp) }
+
     }
 
 
-    fun createAccount(request: EmployeeRequest): EmployeeDTO {
+    @Transactional
+    fun createAccount(request: EmployeeCreateAccountRequest): EmployeeDTO {
         val firebaseUid = firebaseRepo.createFirebaseUser(request.email)
+        val company = companyService.findById(request.companyId)
 
         try {
-            val emp = Employee(
+            val employee = Employee(
                 firebaseUid = firebaseUid,
                 firstName = request.firstName,
                 lastName = request.lastName,
                 email = request.email,
                 phoneNumber = request.phoneNumber,
+                company = company
             )
 
-            return toDTO(employeeRepo.save(emp))
+            company.employees.add(employee)
+            companyService.save(company)
+
+            return toDTO(employeeRepository.save(employee))
         } catch (e: Exception) {
             FirebaseAuth.getInstance().deleteUser(firebaseUid)
             throw e
@@ -42,32 +59,45 @@ class EmployeeService(
 
 
     fun findById(id: Long): Employee {
-        return employeeRepo.findById(id).orElseThrow {
+        return employeeRepository.findById(id).orElseThrow {
             IdNotFoundException("Employee with ID $id not found")
         }
     }
 
 
-    fun getAllEmployeesNotAssignedOnDate(date: LocalDate): List<EmployeeDTO> {
-        return employeeRepo.findEmployeesNotAssignedOnDate(date).map { emp -> toDTO(emp) }
+    fun findByFirebaseUid(uid: String): Employee {
+        return employeeRepository.findByFirebaseUid(uid).orElseThrow {
+            IdNotFoundException("Employee with UID $uid not found")
+        }
     }
 
 
-    fun toDTO(emp: Employee): EmployeeDTO {
+    fun getAllEmployeesNotAssignedOnDate(date: LocalDate): List<EmployeeDTO> {
+        val company = firebaseService.getUserCompany()
+        return employeeRepository.findEmployeesNotAssignedOnDate(date, company.id).map { emp -> toDTO(emp) }
+    }
+
+
+    fun toDTO(employee: Employee): EmployeeDTO {
         return EmployeeDTO(
-            id = emp.id,
-            email = emp.email,
-            firstName = emp.firstName,
-            lastName = emp.lastName,
-            phoneNumber = emp.phoneNumber,
-            status = emp.status,
-            role = emp.role
+            id = employee.id,
+            email = employee.email,
+            firstName = employee.firstName,
+            lastName = employee.lastName,
+            phoneNumber = employee.phoneNumber,
+            status = employee.status,
+            role = employee.role,
+            company = companyService.toDto(employee.company)
         )
     }
 
 
-    fun update(employeeId: Long, request: EmployeeRequest): EmployeeDTO {
+    @Transactional
+    fun update(employeeId: Long, request: EmployeeUpdateAccountRequest): EmployeeDTO {
         val employee = findById(employeeId)
+
+        if (!firebaseService.employeeBelongsToUserCompany(employee.id))
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         val prevEmail = firebaseRepo.changeUserEmail(
             email = request.email,
@@ -86,7 +116,7 @@ class EmployeeService(
         employee.status = request.status
 
         try {
-            return toDTO(employeeRepo.save(employee))
+            return toDTO(employeeRepository.save(employee))
         } catch (e: Exception) {
             firebaseRepo.changeUserEmail(
                 email = prevEmail,
@@ -103,8 +133,9 @@ class EmployeeService(
         val authentication = SecurityContextHolder.getContext().authentication
         val firebaseUid = authentication.principal as String
 
-        val employee = employeeRepo.findByFirebaseUid(firebaseUid)
-            ?: throw Exception(USER_NOT_FOUND_MESSAGE)
+        val employee = employeeRepository.findByFirebaseUid(firebaseUid).orElseThrow {
+            throw Exception(USER_NOT_FOUND_MESSAGE)
+        }
 
         return toDTO(employee)
     }

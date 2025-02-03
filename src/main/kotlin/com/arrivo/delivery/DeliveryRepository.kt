@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
 
+
 @Repository
 interface DeliveryRepository : JpaRepository<Delivery, Long> {
 
@@ -12,5 +13,9 @@ interface DeliveryRepository : JpaRepository<Delivery, Long> {
     fun isEmployeeAssignedOnDate(employeeId: Long, assignedDate: LocalDate): Boolean
 
     @Query("SELECT d FROM Delivery d WHERE d.employee.id = :employeeId AND d.assignedDate = :assignedDate")
-    fun findByEmployeeIdAndAssignedDate(employeeId: Long, assignedDate: LocalDate): Delivery?
+    fun findByEmployeeIdAndAssignedDate(employeeId: Long, assignedDate: LocalDate, companyId: Long): Delivery?
+
+    @Query("SELECT d FROM Delivery d WHERE d.company.id = :companyId")
+    fun findAllDeliveriesInCompany(companyId: Long): List<Delivery>
+
 }

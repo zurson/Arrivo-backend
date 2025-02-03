@@ -2,6 +2,7 @@ package com.arrivo.road_accidents
 
 import com.arrivo.employee.Employee
 import com.arrivo.utilities.Location
+import com.fasterxml.jackson.annotation.JsonBackReference
 import jakarta.persistence.*
 import java.time.LocalDate
 
@@ -19,10 +20,16 @@ data class RoadAccident(
     @Enumerated(EnumType.STRING)
     var category: RoadAccidentCategory = RoadAccidentCategory.OTHER,
 
+    @Column(nullable = false)
     var licensePlate: String,
+
+    @Column(nullable = false)
     var date: LocalDate,
+
+    @Column(nullable = false)
     var description: String,
 
+    @JsonBackReference
     @ManyToOne
     var employee: Employee
 )
