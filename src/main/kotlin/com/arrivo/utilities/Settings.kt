@@ -19,6 +19,9 @@ class Settings {
         const val ERROR_TASK_TITLE_ALREADY_EXISTS_MESSAGE = "Title already exists"
         const val ERROR_INVALID_REQUEST_FORMAT_MESSAGE = "Invalid request format"
 
+        // COMPANY EXCEPTION
+        const val COMPANY_EXCEPTION_ERROR_MESSAGE = "This resource does not belong to your company"
+
         // DELIVERY
         const val DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE =
             "The employee is already assigned to some delivery at this time"

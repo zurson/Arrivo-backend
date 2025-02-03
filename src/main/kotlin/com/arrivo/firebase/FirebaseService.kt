@@ -24,21 +24,18 @@ class FirebaseService(@Lazy private val employeeService: EmployeeService) {
 
     fun deliveryBelongsToUserCompany(deliveryId: Long): Boolean {
         val company = getUserCompany()
-//        company.deliveries.size
         return company.deliveries.find { it.id == deliveryId } != null
     }
 
 
     fun taskBelongsToUserCompany(taskId: Long): Boolean {
         val company = getUserCompany()
-//        company.tasks.size
         return company.tasks.find { it.id == taskId } != null
     }
 
 
     fun employeeBelongsToUserCompany(employeeId: Long): Boolean {
         val company = getUserCompany()
-//        company.employees.size
         return company.employees.find { it.id == employeeId } != null
     }
 

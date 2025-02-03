@@ -5,6 +5,7 @@ import com.arrivo.employee.EmployeeService
 import com.arrivo.exceptions.CompanyException
 import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.firebase.FirebaseService
+import com.arrivo.utilities.Settings.Companion.COMPANY_EXCEPTION_ERROR_MESSAGE
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.format.DateTimeFormatter
@@ -32,20 +33,10 @@ class RoadAccidentService(
     fun findAll(id: Long): List<RoadAccidentDTO> {
         val employee = findEmployeeById(id)
 
-        println("SZUKAM WSZYSTKICH DLA PRACOWNIKA ${employee.firstName}")
-
         if (!firebaseService.employeeBelongsToUserCompany(employee.id))
-            throw CompanyException("This employee does not belong to your company")
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
-        println("JEST OKEJ")
-
-        val company = firebaseService.getUserCompany()
-        val result = repository.findAllByEmployeeId(employee.id, company.id).map { toDto(it) }
-
-        println("RESULT:")
-        result.forEach { r -> println(r) }
-
-        return result
+        return repository.findAllByEmployeeId(employee.id).map { toDto(it) }
     }
 
 

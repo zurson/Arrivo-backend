@@ -5,6 +5,7 @@ import com.arrivo.delivery.Delivery
 import com.arrivo.employee.Employee
 import com.arrivo.task.Task
 import com.arrivo.utilities.Location
+import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.*
 
 @Entity
@@ -26,15 +27,19 @@ data class Company(
 
     // Elements
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "company")
     val employees: MutableList<Employee> = mutableListOf(),
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "company")
     val tasks: MutableList<Task> = mutableListOf(),
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "company")
     val deliveries: MutableList<Delivery> = mutableListOf(),
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "company")
     val availableProducts: MutableList<AvailableProduct> = mutableListOf(),
 

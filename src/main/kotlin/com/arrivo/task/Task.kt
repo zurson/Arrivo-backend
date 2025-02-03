@@ -4,6 +4,8 @@ import com.arrivo.company.Company
 import com.arrivo.delivery.Delivery
 import com.arrivo.task.products.Product
 import com.arrivo.utilities.Location
+import com.fasterxml.jackson.annotation.JsonBackReference
+import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -14,6 +16,7 @@ data class Task(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "company_id", nullable = false)
     val company: Company,
@@ -38,10 +41,12 @@ data class Task(
     @Column(nullable = true)
     var endDate: LocalDateTime? = null,
 
+    @JsonManagedReference
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "task_id")
     val products: MutableList<Product> = mutableListOf(),
 
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "delivery_id", nullable = true)
     var delivery: Delivery? = null

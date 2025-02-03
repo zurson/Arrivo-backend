@@ -11,6 +11,7 @@ import com.arrivo.task.Task
 import com.arrivo.task.TaskRepository
 import com.arrivo.task.TaskService
 import com.arrivo.task.TaskStatus
+import com.arrivo.utilities.Settings.Companion.COMPANY_EXCEPTION_ERROR_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_ALREADY_COMPLETED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_BREAK_ALREADY_USED
 import com.arrivo.utilities.Settings.Companion.DELIVERY_EMP_ALREADY_ASSIGNED_MESSAGE
@@ -145,7 +146,7 @@ class DeliveryService(
         val delivery = findById(id)
 
         if (!firebaseService.deliveryBelongsToUserCompany(delivery.id))
-            throw CompanyException("This delivery does not belong to your company")
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         validateNotCompleted(delivery)
 
@@ -159,7 +160,7 @@ class DeliveryService(
         val delivery = findById(id)
 
         if (!firebaseService.deliveryBelongsToUserCompany(delivery.id))
-            throw CompanyException("This delivery does not belong to your company")
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         if (delivery.status != DeliveryStatus.IN_PROGRESS)
             throw UnsupportedOperationException(DELIVERY_NOT_IN_PROGRESS_MESSAGE)
@@ -181,7 +182,7 @@ class DeliveryService(
         val employee = employeeService.findById(request.employeeId)
 
         if (!firebaseService.deliveryBelongsToUserCompany(delivery.id))
-            throw CompanyException("This delivery does not belong to your company")
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         if (!areDatesTheSame(delivery.assignedDate, request.date))
             validateEmployeeAvailabilityOnDate(employee.id, request.date)
@@ -224,7 +225,7 @@ class DeliveryService(
         val delivery = findById(deliveryId)
 
         if (!firebaseService.deliveryBelongsToUserCompany(delivery.id))
-            throw CompanyException("This delivery does not belong to your company")
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         delivery.apply {
             status = request.status
@@ -290,6 +291,10 @@ class DeliveryService(
 
     fun optimizeTours(optimizeRoutesRequest: OptimizeRoutesRequest): OptimizedRoutesResponse {
         val tasks: List<TaskToOptimize> = optimizeRoutesRequest.tasksToOptimize
+        val company = firebaseService.getUserCompany()
+
+        val latitude = company.location.latitude
+        val longitude = company.location.longitude
 
         val clientSettings = RouteOptimizationSettings.newBuilder()
             .setTransportChannelProvider(
@@ -317,8 +322,8 @@ class DeliveryService(
 
             val vehicles = listOf(
                 Vehicle.newBuilder()
-                    .setStartLocation(LatLng.newBuilder().setLatitude(52.1234).setLongitude(22.1234))
-                    .setEndLocation(LatLng.newBuilder().setLatitude(52.1234).setLongitude(22.1234))
+                    .setStartLocation(LatLng.newBuilder().setLatitude(latitude).setLongitude(longitude))
+                    .setEndLocation(LatLng.newBuilder().setLatitude(latitude).setLongitude(longitude))
                     .setLabel(OPTIMIZATION_VEHICLE_LABEL)
                     .setCostPerHour(OPTIMIZATION_CAR_COST_PER_HOUR)
                     .setCostPerKilometer(OPTIMIZATION_CAR_COST_PER_KILOMETER)

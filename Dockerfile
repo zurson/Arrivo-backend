@@ -8,6 +8,8 @@ RUN gradle clean build --parallel
 FROM eclipse-temurin:21
 WORKDIR /arrivo/server
 
+EXPOSE 8080
+
 RUN apt-get update && apt-get install -y openssl
 
 COPY --from=builder /arrivo/server/build/libs/*.jar server.jar

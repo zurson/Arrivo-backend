@@ -8,6 +8,7 @@ import com.arrivo.exceptions.*
 import com.arrivo.firebase.FirebaseService
 import com.arrivo.task.products.Product
 import com.arrivo.task.products.ProductRequest
+import com.arrivo.utilities.Settings.Companion.COMPANY_EXCEPTION_ERROR_MESSAGE
 import com.arrivo.utilities.Settings.Companion.DELIVERY_ALREADY_COMPLETED_MESSAGE
 import com.arrivo.utilities.Settings.Companion.NO_DELIVERY_ASSIGNED
 import com.arrivo.utilities.Settings.Companion.TASK_ALREADY_COMPLETED_MESSAGE
@@ -68,7 +69,7 @@ class TaskService(
         val task = findById(id)
 
         if (!firebaseService.taskBelongsToUserCompany(task.id))
-            throw CompanyException("This task does not belong to your company")
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         if (task.delivery != null)
             throw DataConflictException("Task already assigned")
@@ -94,7 +95,7 @@ class TaskService(
         var task = findById(id)
 
         if (!firebaseService.taskBelongsToUserCompany(task.id))
-            throw CompanyException("This task does not belong to your company")
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         if (task.delivery == null)
             throw DataCorruptedException(NO_DELIVERY_ASSIGNED)

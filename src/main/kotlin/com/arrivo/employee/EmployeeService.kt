@@ -6,6 +6,7 @@ import com.arrivo.exceptions.IdNotFoundException
 import com.arrivo.firebase.FirebaseRepository
 import com.arrivo.firebase.FirebaseService
 import com.arrivo.security.Role
+import com.arrivo.utilities.Settings.Companion.COMPANY_EXCEPTION_ERROR_MESSAGE
 import com.arrivo.utilities.Settings.Companion.USER_NOT_FOUND_MESSAGE
 import com.google.firebase.auth.FirebaseAuth
 import org.springframework.context.annotation.Lazy
@@ -96,7 +97,7 @@ class EmployeeService(
         val employee = findById(employeeId)
 
         if (!firebaseService.employeeBelongsToUserCompany(employee.id))
-            throw CompanyException("This employee does not belong to your company")
+            throw CompanyException(COMPANY_EXCEPTION_ERROR_MESSAGE)
 
         val prevEmail = firebaseRepo.changeUserEmail(
             email = request.email,
